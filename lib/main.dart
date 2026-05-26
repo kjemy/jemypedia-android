@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,11 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:screen_protector/screen_protector.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
-import 'package:win32/win32.dart';
-import 'dart:ffi' hide Size;
-import 'package:ffi/ffi.dart';
 import 'package:jemypedia_app/shared/widgets/glass_container.dart';
 import 'package:jemypedia_app/features/home/ui/home_screen.dart';
 import 'package:jemypedia_app/core/providers/locale_provider.dart';
@@ -29,50 +25,19 @@ const String appVersion = '2.1.0';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized(); // مطلوب لتهيئة مشغل الفيديو
-  
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-    await windowManager.ensureInitialized();
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(1280, 800),
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
-      title: "Jemypedia",
-    );
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
-  }
 
-  // تفعيل نظام الحماية الفولاذية (منع تصوير الشاشة وتسجيل الفيديو)
-    if (!kIsWeb) {
+  // تفعيل نظام الحماية (منع تصوير الشاشة وتسجيل الفيديو)
+  if (!kIsWeb) {
+    try {
       if (Platform.isAndroid) {
         await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
       } else if (Platform.isIOS) {
         await ScreenProtector.preventScreenshotOn();
-      } else if (Platform.isWindows) {
-        // حماية الويندوز الفولاذية باستخدام Win32 API
-        Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-          try {
-            final windowTitle = "Jemypedia".toNativeUtf16();
-            final hwnd = FindWindow(nullptr, windowTitle);
-            free(windowTitle);
-            
-            if (hwnd != 0) {
-              SetWindowDisplayAffinity(hwnd, 0x00000011);
-              // Ã™â€žÃ˜Â§ Ã™â€ Ã™Ë†Ã™â€šÃ™Â Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â§Ã™Å Ã™â€¦Ã˜Â± Ã™ÂÃ™Ë†Ã˜Â±Ã˜Â§Ã™â€¹Ã˜Å’ Ã™â€ Ã˜ÂªÃ˜Â±Ã™Æ’Ã™â€¡ Ã™Å Ã˜ÂªÃ˜Â£Ã™Æ’Ã˜Â¯ Ã™â€¦Ã˜Â±Ã˜ÂªÃ™Å Ã™â€  Ã™â€žÃ˜Â¶Ã™â€¦Ã˜Â§Ã™â€  Ã˜Â§Ã™â€žÃ˜Â­Ã™â€¦Ã˜Â§Ã™Å Ã˜Â©
-              if (timer.tick > 5) timer.cancel();
-              debugPrint("Windows Security: Locked Screen.");
-            }
-          } catch (e) {
-            debugPrint("Windows Security Error: $e");
-          }
-          if (timer.tick > 20) timer.cancel();
-        });
       }
+    } catch (e) {
+      debugPrint("Security init error: $e");
     }
+  }
 
   runApp(
     MultiProvider(
