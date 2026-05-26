@@ -411,7 +411,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(cat['name'] ?? '', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor)),
+                  SizedBox(
+                    width: 75,
+                    child: Text(
+                      cat['name'] ?? '', 
+                      maxLines: 1, 
+                      overflow: TextOverflow.ellipsis, 
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor)
+                    ),
+                  ),
               ],
             ),
           );
@@ -542,16 +551,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSectionTitle(String title, IconData icon, Color textColor, {VoidCallback? onSeeAll}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            Icon(icon, color: AppColors.accentNeon, size: 22),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
-            ),
-          ],
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: AppColors.accentNeon, size: 22),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
+                ),
+              ),
+            ],
+          ),
         ),
         if (onSeeAll != null)
           TextButton(
@@ -616,8 +633,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(course.getLocalizedTitle(locale), 
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
-                      Text(course.getLocalizedInstructor(locale), style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 14)),
+                      Text(course.getLocalizedInstructor(locale), 
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 14)),
                       const SizedBox(height: 10),
                       LinearProgressIndicator(
                         value: course.progress,
@@ -648,164 +670,174 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(
           children: [
             SizedBox(
-              height: 330,
+              height: 300,
               child: ListView.builder(
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-            itemCount: courses.length,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: courses.length,
             itemBuilder: (context, index) {
               final course = courses[index];
-              return Container(
-                width: 240,
-                margin: const EdgeInsets.only(right: 20),
-                child: AnimatedHoverCard(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CourseDetailScreen(course: course)),
-                    );
-                  },
-                  child: GlassContainer(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                                child: AspectRatio(
-                                  aspectRatio: 16 / 9,
-                                  child: Stack(
-                                    children: [
-                                      CourseImage(
-                                        url: course.coverImageUrl,
-                                        width: double.infinity,
-                                        height: double.infinity,
+              return SizedBox(
+                width: 220,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: AnimatedHoverCard(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CourseDetailScreen(course: course)),
+                      );
+                    },
+                    child: GlassContainer(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Thumbnail
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            child: SizedBox(
+                              height: 120,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  CourseImage(
+                                    url: course.coverImageUrl,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                                  if (course.getLocalizedBadge(locale).isNotEmpty || course.isNew)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: _parseHexColor(course.badgeStatus['color']),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          course.getLocalizedBadge(locale).isNotEmpty
+                                              ? course.getLocalizedBadge(locale)
+                                              : AppLocalizations.tr(context, 'new'),
+                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                                        ),
                                       ),
-                                      if (course.getLocalizedBadge(locale).isNotEmpty || course.isNew)
-                                        Positioned(
-                                          top: 12,
-                                          right: 12,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(
-                                              color: _parseHexColor(course.badgeStatus['color']),
-                                              borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  Positioned(
+                                    top: 8,
+                                    left: 8,
+                                    child: Consumer2<CoursesProvider, FavoritesProvider>(
+                                      builder: (context, prov, favProv, child) {
+                                        final isWatchLater = prov.watchLaterCourseIds.contains(course.id);
+                                        final isFavorite = favProv.isCourseFavorite(course.id);
+                                        return Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => prov.toggleWatchLater(course.id),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(5),
+                                                decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                                child: Icon(isWatchLater ? Icons.bookmark : Icons.bookmark_border,
+                                                    color: isWatchLater ? AppColors.accentNeon : Colors.white, size: 14),
+                                              ),
                                             ),
-                                            child: Text(course.getLocalizedBadge(locale).isNotEmpty ? course.getLocalizedBadge(locale) : AppLocalizations.tr(context, 'new'),
-                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                                          ),
-                                        ),
-                                      Positioned(
-                                        top: 12,
-                                        left: 12,
-                                        child: Consumer2<CoursesProvider, FavoritesProvider>(
-                                          builder: (context, prov, favProv, child) {
-                                            final isWatchLater = prov.watchLaterCourseIds.contains(course.id);
-                                            final isFavorite = favProv.isCourseFavorite(course.id);
-                                            String? catIcon;
-                                            final cat = course.categoryIds.isNotEmpty ? prov.getCategoryDetails(course.categoryIds.first) : null;
-                                            if (cat != null) catIcon = cat['icon'] ?? cat['slug'];
-                                            
-                                            return Row(
-                                              children: [
-                                                // Bookmark (Watch Later)
-                                                GestureDetector(
-                                                  onTap: () => prov.toggleWatchLater(course.id),
-                                                  child: Container(
-                                                    padding: const EdgeInsets.all(6),
-                                                    decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                                                    child: Icon(
-                                                      isWatchLater ? Icons.bookmark : Icons.bookmark_border,
-                                                      color: isWatchLater ? AppColors.accentNeon : Colors.white,
-                                                      size: 16,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                // Heart (Favorite)
-                                                GestureDetector(
-                                                  onTap: () => favProv.toggleCourseFavorite(course.id),
-                                                  child: Container(
-                                                    padding: const EdgeInsets.all(6),
-                                                    decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                                                    child: Icon(
-                                                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                                                      color: isFavorite ? Colors.white : Colors.white70,
-                                                      size: 16,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
+                                            const SizedBox(width: 4),
+                                            GestureDetector(
+                                              onTap: () => favProv.toggleCourseFavorite(course.id),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(5),
+                                                decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                                child: Icon(isFavorite ? Icons.favorite : Icons.favorite_border,
+                                                    color: isFavorite ? Colors.redAccent : Colors.white70, size: 14),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
                                   ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Info
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  course.getLocalizedTitle(locale),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor, height: 1.3),
                                 ),
-                              ),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(course.getLocalizedTitle(locale), 
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
-                              const SizedBox(height: 6),
-                              Consumer<CoursesProvider>(
-                                builder: (context, prov, child) {
-                                  if (course.categoryIds.isNotEmpty) {
-                                    final cat = prov.getCategoryDetails(course.categoryIds.first);
-                                    if (cat != null) {
-                                      return Text(cat['name'] ?? '', style: TextStyle(fontSize: 11, color: AppColors.accentNeon, fontWeight: FontWeight.bold));
+                                const SizedBox(height: 4),
+                                Consumer<CoursesProvider>(
+                                  builder: (context, prov, child) {
+                                    if (course.categoryIds.isNotEmpty) {
+                                      final cat = prov.getCategoryDetails(course.categoryIds.first);
+                                      if (cat != null) {
+                                        return Text(cat['name'] ?? '',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontSize: 10, color: AppColors.accentNeon, fontWeight: FontWeight.bold));
+                                      }
                                     }
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(Icons.access_time_rounded, size: 14, color: AppColors.accentNeon),
-                                  const SizedBox(width: 6),
-                                  Text('${course.duration} ${AppLocalizations.tr(context, 'hours')}', 
-                                    style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.6))),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(course.getLocalizedInstructor(locale), 
-                                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(fontSize: 13, color: textColor.withOpacity(0.7))),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              if (course.price['regular_price'].toString().isNotEmpty)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
                                   children: [
-                                    if (course.price['on_sale'] == true)
-                                      Text("${course.price['regular_price']} ${course.price['currency']}", 
-                                        style: TextStyle(fontSize: 10, color: Colors.grey, decoration: TextDecoration.lineThrough)),
-                                    Row(
-                                      children: [
-                                        Text("${course.price['on_sale'] == true ? course.price['sale_price'] : course.price['regular_price']} ${course.price['currency']}", 
-                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.accentNeon)),
-                                        const SizedBox(width: 4),
-                                        Text(course.getLocalizedAccessPeriod(locale), 
-                                          style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.5))),
-                                      ],
+                                    const Icon(Icons.access_time_rounded, size: 12, color: AppColors.accentNeon),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        '${course.duration} ${AppLocalizations.tr(context, 'hours')}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontSize: 11, color: textColor.withOpacity(0.6)),
+                                      ),
                                     ),
                                   ],
                                 ),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  course.getLocalizedInstructor(locale),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.6)),
+                                ),
+                                if (course.price['regular_price'].toString().isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  if (course.price['on_sale'] == true)
+                                    Text(
+                                      "${course.price['regular_price']} ${course.price['currency']}",
+                                      style: const TextStyle(fontSize: 10, color: Colors.grey, decoration: TextDecoration.lineThrough),
+                                    ),
+                                  Text(
+                                    "${course.price['on_sale'] == true ? course.price['sale_price'] : course.price['regular_price']} ${course.price['currency']}",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.accentNeon),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },    ),
                         ),
                       ],
                     ),
@@ -819,14 +851,14 @@ class _HomeScreenState extends State<HomeScreen> {
           // Left Arrow
           Positioned(
             left: 0,
-            top: 330 / 2 - 20,
+            top: 300 / 2 - 20,
             child: GestureDetector(
               onTap: () {
-                scrollController.animateTo(scrollController.offset - 240, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                scrollController.animateTo(scrollController.offset - 220, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
               },
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle, border: Border.all(color: Colors.white24)),
+                decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle, border: Border.all(color: Colors.white24)),
                 child: const Icon(Icons.chevron_left, color: Colors.white, size: 24),
               ),
             ),
@@ -834,14 +866,14 @@ class _HomeScreenState extends State<HomeScreen> {
           // Right Arrow
           Positioned(
             right: 0,
-            top: 330 / 2 - 20,
+            top: 300 / 2 - 20,
             child: GestureDetector(
               onTap: () {
-                scrollController.animateTo(scrollController.offset + 240, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                scrollController.animateTo(scrollController.offset + 220, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
               },
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle, border: Border.all(color: Colors.white24)),
+                decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle, border: Border.all(color: Colors.white24)),
                 child: const Icon(Icons.chevron_right, color: Colors.white, size: 24),
               ),
             ),

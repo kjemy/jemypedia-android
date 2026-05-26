@@ -19,6 +19,7 @@ import 'package:jemypedia_app/features/support/ui/chat_screen.dart';
 import 'package:jemypedia_app/core/providers/chat_provider.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:jemypedia_app/features/splash/splash_screen.dart';
 
 const String appVersion = '2.1.0';
 
@@ -79,59 +80,7 @@ class JemyAcademyApp extends StatefulWidget {
 }
 
 class _JemyAcademyAppState extends State<JemyAcademyApp> {
-  @override
-  void initState() {
-    super.initState();
-    _handleInitialAuth();
-  }
-
-  Future<void> _handleInitialAuth() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final coursesProvider = Provider.of<CoursesProvider>(context, listen: false);
-    
-    final creds = await authProvider.getSavedCredentials();
-    if (creds != null) {
-      final hwid = await WordPressService.getDeviceId();
-      final userData = await coursesProvider.verifyUserSubscription(
-        creds['email']!, 
-        creds['password']!, 
-        hwid
-      );
-      
-      if (userData != null && userData['success'] == true) {
-        // Auto-login succeeded
-        await authProvider.login(
-          creds['email']!, 
-          creds['password']!, 
-          rememberMe: true, 
-          userData: userData
-        );
-      } else if (userData != null && userData['success'] == false) {
-        // Server rejected (wrong creds / device limit exceeded):
-        // Clear saved credentials so the user is taken to LoginScreen next time.
-        await authProvider.logout();
-        // Show the Arabic error message via SnackBar if widget is still mounted
-        if (context.mounted && userData['message'] != null) {
-          final msg = userData['message'].toString();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                msg,
-                textDirection: TextDirection.rtl,
-                style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
-              ),
-              backgroundColor: Colors.red.shade800,
-              duration: const Duration(seconds: 6),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-      // If userData == null (network error), keep credentials and let user retry manually
-    }
-    // Always fetch initial content (articles, ticker, etc.)
-    await coursesProvider.fetchCourses();
-  }
+  // No initState needed - SplashScreen handles all loading & auto-login
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +150,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
                 : GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
             iconTheme: const IconThemeData(color: Colors.white, size: 24),
           ),
-          home: const HomeScreen(),
+          home: const SplashScreen(),
         );
       },
     );
