@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/glass_container.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../dashboard/ui/dashboard_screen.dart';
 import '../../../courses/ui/my_courses_screen.dart';
 import '../../../certificates/ui/certificates_screen.dart';
