@@ -32,6 +32,7 @@ dependencies:
   media_kit: ^1.1.10
   media_kit_video: 1.2.4
   media_kit_libs_windows_video: ^1.0.4
+  media_kit_libs_android_video: ^1.0.4
   window_manager: ^0.4.3
   shared_preferences: ^2.2.3
   uuid: ^4.5.1

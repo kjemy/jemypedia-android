@@ -24,7 +24,11 @@ const String appVersion = '2.1.0';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized(); // مطلوب لتهيئة مشغل الفيديو
+  try {
+    MediaKit.ensureInitialized(); // مطلوب لتهيئة مشغل الفيديو
+  } catch (e) {
+    debugPrint("MediaKit initialization error: $e");
+  }
 
   // تفعيل نظام الحماية (منع تصوير الشاشة وتسجيل الفيديو)
   if (!kIsWeb) {
@@ -95,13 +99,35 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
       );
       
       if (userData != null && userData['success'] == true) {
+        // Auto-login succeeded
         await authProvider.login(
           creds['email']!, 
           creds['password']!, 
           rememberMe: true, 
           userData: userData
         );
+      } else if (userData != null && userData['success'] == false) {
+        // Server rejected (wrong creds / device limit exceeded):
+        // Clear saved credentials so the user is taken to LoginScreen next time.
+        await authProvider.logout();
+        // Show the Arabic error message via SnackBar if widget is still mounted
+        if (context.mounted && userData['message'] != null) {
+          final msg = userData['message'].toString();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                msg,
+                textDirection: TextDirection.rtl,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+              ),
+              backgroundColor: Colors.red.shade800,
+              duration: const Duration(seconds: 6),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
+      // If userData == null (network error), keep credentials and let user retry manually
     }
     // Always fetch initial content (articles, ticker, etc.)
     await coursesProvider.fetchCourses();
@@ -364,12 +390,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               final userData = await coursesProvider.verifyUserSubscription(email, password, fingerprint);
                               
                               if (context.mounted) {
-                                setState(() => _isLoading = true); // Keep loading while processing
-                                
-                                if (userData != null) {
-                                  // Mark user as logged in, store credentials if remember me is checked
+                                // userData is null = network error
+                                // userData['success'] == false = server returned an error (wrong creds, device limit...)
+                                // userData['success'] == true  = login OK
+                                if (userData != null && userData['success'] == true) {
                                   await authProvider.login(email, password, rememberMe: _rememberMe, userData: userData);
-                                  
                                   setState(() => _isLoading = false);
                                   Navigator.pushReplacement(
                                     context,
@@ -377,8 +402,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                                 } else {
                                   setState(() => _isLoading = false);
+                                  // Show the server error message (Arabic device-limit message, wrong password, etc.)
+                                  final errMsg = (userData != null && userData['message'] != null)
+                                      ? userData['message'].toString()
+                                      : 'فشل تسجيل الدخول. تحقق من الاتصال بالإنترنت أو بيانات الدخول.';
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Login Failed. Invalid credentials or network error.')),
+                                    SnackBar(
+                                      content: Text(
+                                        errMsg,
+                                        textDirection: TextDirection.rtl,
+                                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+                                      ),
+                                      backgroundColor: Colors.red.shade800,
+                                      duration: const Duration(seconds: 5),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
                                   );
                                 }
                               }

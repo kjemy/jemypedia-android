@@ -135,8 +135,10 @@ class CoursesProvider with ChangeNotifier {
 
     try {
       final data = await _apiService.checkUserStatus(email, password, hwid);
-      if (data != null && data.containsKey('unlocked_courses')) {
-        _unlockedCourses = List<int>.from(data['unlocked_courses']);
+      if (data != null) {
+        if (data['success'] == true && data.containsKey('unlocked_courses')) {
+          _unlockedCourses = List<int>.from(data['unlocked_courses']);
+        }
         _isLoading = false;
         notifyListeners();
         return data;

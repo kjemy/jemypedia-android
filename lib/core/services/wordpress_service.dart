@@ -77,7 +77,8 @@ class WordPressService {
   Future<Map<String, dynamic>> getTicker() async {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(Uri.parse('$omniUrl/ticker?cb=$ts')).timeout(const Duration(seconds: 15));
+      final platform = kIsWeb ? 'web' : (Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'windows'));
+      final response = await http.get(Uri.parse('$omniUrl/ticker?cb=$ts&platform=$platform')).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) return jsonDecode(response.body);
       return {'text': 'Welcome to Jemy Academy!', 'active': false};
     } catch (e) {
@@ -219,10 +220,24 @@ class WordPressService {
         body: jsonEncode({'email': email, 'password': password, 'hwid': hwid}),
       ).timeout(const Duration(seconds: 5));
 
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          return {...data, 'success': true};
+        }
+        return {'success': true};
+      } else {
+        if (data is Map<String, dynamic> && data.containsKey('message')) {
+          return {
+            'success': false,
+            'message': data['message']
+          };
+        }
+        return {
+          'success': false,
+          'message': 'Login Failed. Invalid credentials or network error.'
+        };
       }
-      return null;
     } catch (e) {
       return null;
     }
