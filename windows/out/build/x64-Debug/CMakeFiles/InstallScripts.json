@@ -1,0 +1,13 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/cmake_install.cmake",
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/flutter/cmake_install.cmake",
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/runner/cmake_install.cmake",
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/plugins/flutter_secure_storage_windows/cmake_install.cmake",
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/plugins/screen_retriever_windows/cmake_install.cmake",
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/plugins/url_launcher_windows/cmake_install.cmake",
+		"C:/Users/hp/.gemini/antigravity/scratch/jemy_academy_app/windows/out/build/x64-Debug/plugins/window_manager/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

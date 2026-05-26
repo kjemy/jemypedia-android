@@ -1,0 +1,13 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "dll",
+      "exe": "",
+      "project": "windows\\CMakeLists.txt",
+      "projectTarget": "flutter_secure_storage_windows_plugin.dll (plugins\\flutter_secure_storage_windows\\flutter_secure_storage_windows_plugin.dll)",
+      "name": "flutter_secure_storage_windows_plugin.dll (plugins\\flutter_secure_storage_windows\\flutter_secure_storage_windows_plugin.dll)"
+    }
+  ]
+}
