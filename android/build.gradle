@@ -18,3 +18,14 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+subprojects {
+    project.plugins.whenPluginAdded { plugin ->
+        if (plugin.class.name.startsWith("com.android.build.gradle")) {
+            project.android {
+                compileSdkVersion 36
+                buildToolsVersion "36.0.0"
+            }
+        }
+    }
+}
