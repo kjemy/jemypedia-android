@@ -31,26 +31,8 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Patch plugin namespaces for AGP 8
-        run: |
-          find /home/runner/.pub-cache -name "build.gradle" | while read -r f; do
-            if grep -q "android {" "$f"; then
-              if ! grep -q "namespace" "$f"; then
-                manifest_path="$(dirname "$f")/src/main/AndroidManifest.xml"
-                pkg=""
-                if [ -f "$manifest_path" ]; then
-                  pkg=$(grep -oP 'package="\K[^"]+' "$manifest_path" | head -1)
-                fi
-                if [ -z "$pkg" ]; then
-                  pkg=$(grep -oP "(?<=group ').*(?=')" "$f" | head -1)
-                fi
-                if [ -n "$pkg" ]; then
-                  echo "Patching namespace '$pkg' into $f"
-                  sed -i "s/android {/android {\n    namespace '$pkg'/" "$f"
-                fi
-              fi
-            fi
-          done
+      - name: Patch plugin namespaces and compileSdk for AGP 8
+        run: python3 scripts/patch_plugins.py
 
       - name: Build Android APK (Release + Obfuscated)
         run: flutter build apk --release --obfuscate --split-debug-info=symbols/android
