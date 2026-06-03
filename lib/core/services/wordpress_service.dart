@@ -108,7 +108,7 @@ class WordPressService {
       }
       return [];
     } catch (e) {
-      print('Error fetching categories: $e');
+      debugPrint('Error fetching categories: $e');
       return [];
     }
   }
@@ -352,7 +352,7 @@ class WordPressService {
       if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) {
-      print('Error fetching sections: $e');
+      debugPrint('Error fetching sections: $e');
       return [];
     }
   }

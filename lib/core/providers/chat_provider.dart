@@ -32,7 +32,7 @@ class ChatProvider with ChangeNotifier {
   final String _hubUrl = 'https://ai-project-1.jemytrade72345.workers.dev/web-chat';
   final String _wpUrl = 'https://www.jemypedia.com';
   
-  List<ChatMessage> _messages = [
+  final List<ChatMessage> _messages = [
     ChatMessage(
       id: -1,
       sender: 'bot',
@@ -43,9 +43,8 @@ class ChatProvider with ChangeNotifier {
   String? _sessionId;
   String? _secretKey;
   bool _isLoading = false;
-  bool _isHumanSupport = false;
+  final bool _isHumanSupport = false;
   Timer? _pollingTimer;
-  int _lastMsgId = 0;
 
   List<ChatMessage> get messages => _messages;
   bool get isLoading => _isLoading;
@@ -135,7 +134,7 @@ class ChatProvider with ChangeNotifier {
         ));
       }
     } catch (e) {
-      print('Error sending message to Hub: $e');
+      debugPrint('Error sending message to Hub: $e');
       _messages.add(ChatMessage(
         id: 0,
         sender: 'system',

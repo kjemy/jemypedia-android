@@ -5,7 +5,6 @@ import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/services/wordpress_service.dart';
-import 'certificate_viewer_screen.dart';
 
 class CertificatesScreen extends StatefulWidget {
   const CertificatesScreen({super.key});

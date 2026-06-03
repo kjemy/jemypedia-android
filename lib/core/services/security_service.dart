@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class SecurityService extends ChangeNotifier {
   static const MethodChannel _channel = MethodChannel('jemypedia/security');
   
   bool _isExternalDisplayConnected = false;
-  bool _isScreenRecording = false; // Placeholder for future Android 14 callback
+  final bool _isScreenRecording = false; // Placeholder for future Android 14 callback
 
   bool get isSecurityCompromised => _isExternalDisplayConnected || _isScreenRecording;
   bool get isExternalDisplayConnected => _isExternalDisplayConnected;

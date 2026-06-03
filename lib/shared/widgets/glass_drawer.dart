@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../main.dart';
-import './glass_container.dart';
+import '../../main.dart'; // ThemeProvider + LoginScreen
 import '../../features/dashboard/ui/dashboard_screen.dart';
 import '../../features/courses/ui/my_courses_screen.dart';
 import '../../features/courses/ui/favorites_screen.dart';

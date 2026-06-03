@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -15,14 +14,10 @@ import 'package:jemypedia_app/core/providers/favorites_provider.dart';
 import 'package:jemypedia_app/core/models/section_model.dart';
 import 'package:jemypedia_app/features/courses/ui/course_detail_screen.dart';
 import 'package:jemypedia_app/features/courses/models/course_model.dart';
-import '../../articles/ui/article_detail_screen.dart';
-import '../../articles/models/article_model.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../main.dart';
+import '../../../main.dart'; // ThemeProvider + appVersion
 import '../../support/ui/chat_screen.dart';
-import '../../../core/services/wordpress_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:jemypedia_app/main.dart'; // To get appVersion
 import 'force_update_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -436,28 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showLoginRequired(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Login Required', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Please login to access this premium feature.', style: TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-            child: const Text('LoginNow'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildAppBar(BuildContext context, bool isDark) {
     return SliverAppBar(
@@ -878,11 +852,6 @@ class _HomeScreenState extends State<HomeScreen> {
 );
 }
 
-  // Articles List hidden
-  Widget _buildArticlesList(BuildContext context, Color textColor, bool isDark) {
-    return const SizedBox.shrink();
-  }
-
 
   // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
   // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ DYNAMIC SECTION FROM WORDPRESS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -1218,86 +1187,6 @@ class CategoryExplorerScreen extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildFooter(BuildContext context) {
-    return Column(
-      children: [
-        const Divider(color: Colors.white10, thickness: 1),
-        const SizedBox(height: 25),
-        const Text(
-          "© 2026-2027 Jemypedia Platform. All Rights Reserved.\nالحقوق محفوظة لمنصة جيميبيديا 2026/2027",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white38,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            height: 1.6,
-          ),
-        ),
-        const SizedBox(height: 20),
-        InkWell(
-          onTap: () async {
-            final url = Uri.parse('https://www.jemypedia.com');
-            if (await launchUrl(url)) {}
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.language_rounded, color: AppColors.accentNeon, size: 16),
-              SizedBox(width: 8),
-              Text(
-                "www.jemypedia.com",
-                style: TextStyle(
-                  color: AppColors.accentNeon,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 15),
-        Wrap(
-          spacing: 20,
-          runSpacing: 10,
-          alignment: WrapAlignment.center,
-          children: [
-            InkWell(
-              onTap: () async {
-                final url = Uri.parse('mailto:Support@Jemypedia.com');
-                if (await launchUrl(url)) {}
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.mail_outline_rounded, color: Colors.white30, size: 14),
-                  SizedBox(width: 6),
-                  Text("Support@Jemypedia.com", style: TextStyle(color: Colors.white30, fontSize: 12)),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: () async {
-                final url = Uri.parse('mailto:Partner@jemypedia.com');
-                if (await launchUrl(url)) {}
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.business_center_outlined, color: Colors.white30, size: 14),
-                  SizedBox(width: 6),
-                  Text("Partner@jemypedia.com", style: TextStyle(color: Colors.white30, fontSize: 12)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 40),
-      ],
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/article_model.dart';

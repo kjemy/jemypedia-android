@@ -101,7 +101,7 @@ class CoursesProvider with ChangeNotifier {
       _updateAllProgresses();
 
     } catch (e) {
-      print('Error fetching data: $e');
+      debugPrint('Error fetching data: $e');
     }
 
     _isLoading = false;
@@ -144,7 +144,7 @@ class CoursesProvider with ChangeNotifier {
         return data;
       }
     } catch (e) {
-      print('Error verifying subscription: $e');
+      debugPrint('Error verifying subscription: $e');
     }
 
     _isLoading = false;

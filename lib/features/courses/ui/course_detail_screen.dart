@@ -12,9 +12,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/favorites_provider.dart';
 import '../../../core/utils/hwid_service.dart';
 import '../models/course_model.dart';
-import '../../certificates/ui/certificate_viewer_screen.dart';
 import '../../../core/services/wordpress_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../quizzes/models/quiz_model.dart';
 import '../../quizzes/ui/quiz_screen.dart';
 import '../../materials/models/material_model.dart';
@@ -534,38 +532,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 
-  Widget _buildLockedState(BuildContext context, bool isDark, String locale) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.black54 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.accentNeon.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.lock_outline_rounded, size: 60, color: Colors.grey),
-          const SizedBox(height: 15),
-          Text(locale == 'ar' ? 'محتوى مدفوع (مغلق)' : 'Premium Content Locked', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.accentNeon)),
-          const SizedBox(height: 10),
-          Text(locale == 'ar' ? 'اشترك الآن لفتح هذا الكورس ومشاهدة جميع الدروس.' : 'Subscribe to a package to unlock this course and view all lessons.', textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _launchWooCommerceCheckout();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            ),
-            child: Text(locale == 'ar' ? 'اشترك الآن' : 'Subscribe Now', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildLessonList(BuildContext context, String locale, bool isDark, bool isUnlocked) {
     if (widget.course.lessons.isEmpty && _quizzes.isEmpty) {

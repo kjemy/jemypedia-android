@@ -15,7 +15,6 @@ import 'package:jemypedia_app/core/providers/articles_provider.dart';
 import 'package:jemypedia_app/core/providers/courses_provider.dart';
 import 'package:jemypedia_app/core/providers/auth_provider.dart';
 import 'package:jemypedia_app/core/providers/favorites_provider.dart';
-import 'package:jemypedia_app/features/support/ui/chat_screen.dart';
 import 'package:jemypedia_app/core/providers/chat_provider.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
 import 'package:media_kit/media_kit.dart';

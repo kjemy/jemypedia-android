@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/services/wordpress_service.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/course_image.dart';
 
 class GenericGridScreen extends StatefulWidget {
@@ -118,7 +116,6 @@ class _GenericGridScreenState extends State<GenericGridScreen> {
                     runSpacing: 16,
                     alignment: WrapAlignment.start,
                     children: items.map((item) {
-                      final bio = item['bio']?[locale] ?? '';
                       final name = item['name'] ?? '';
                       final imageUrl = item['image_url'] ?? '';
                       final actionUrl = item['action_url'] ?? '';
