@@ -5,7 +5,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
 import 'package:jemypedia_app/shared/widgets/glass_container.dart';
