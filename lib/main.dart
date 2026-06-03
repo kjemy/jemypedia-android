@@ -21,6 +21,9 @@ import 'package:jemypedia_app/features/splash/splash_screen.dart';
 import 'package:jemypedia_app/core/services/security_service.dart';
 import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
 
+import 'package:safe_device/safe_device.dart';
+import 'package:flutter/services.dart';
+
 const String appVersion = '2.2.0';
 
 void main() async {
@@ -39,6 +42,50 @@ void main() async {
       }
     } catch (e) {
       debugPrint("Security init error: $e");
+    }
+
+    // تفعيل حماية الأندرويد ضد الروت والمحاكيات
+    if (Platform.isAndroid) {
+      try {
+        bool isJailBroken = await SafeDevice.isJailBroken;
+        bool isRealDevice = await SafeDevice.isRealDevice;
+        
+        if (isJailBroken || !isRealDevice) {
+          runApp(
+            const MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: Scaffold(
+                backgroundColor: Color(0xFF8B0000), // Dark Red
+                body: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.security, color: Colors.white, size: 80),
+                        SizedBox(height: 20),
+                        Text(
+                          'Security Violation',
+                          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Rooted device or Emulator detected.\nThe application cannot run on this device for security reasons.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+          );
+          return; // Stop app initialization
+        }
+      } catch (e) {
+        debugPrint("Anti-tamper check failed: $e");
+      }
     }
   }
 

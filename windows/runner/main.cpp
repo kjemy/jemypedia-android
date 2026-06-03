@@ -5,8 +5,27 @@
 #include "flutter_window.h"
 #include "utils.h"
 
+bool IsLaptop() {
+    SYSTEM_POWER_STATUS status;
+    if (GetSystemPowerStatus(&status)) {
+        // BatteryFlag: 128 means no system battery
+        if (status.BatteryFlag == 128) {
+            return false;
+        }
+        return true;
+    }
+    return true; // Default to allow if status fetch fails
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  if (!IsLaptop()) {
+    MessageBoxW(nullptr, 
+        L"This application is restricted to Laptops and Mobile devices only for security reasons.\n\nDesktop PCs are not supported.", 
+        L"Jemypedia Security", MB_OK | MB_ICONERROR | MB_TOPMOST);
+    return EXIT_FAILURE;
+  }
+
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
