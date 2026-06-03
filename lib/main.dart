@@ -23,7 +23,7 @@ import 'package:jemypedia_app/features/splash/splash_screen.dart';
 import 'package:jemypedia_app/core/services/security_service.dart';
 import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
 
-const String appVersion = '2.1.0';
+const String appVersion = '2.2.0';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
