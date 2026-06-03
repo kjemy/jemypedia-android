@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final serverVer = provider.requiredVersion;
     
     // 🛡️ THE ABSOLUTE FORCE UPDATE CHECK (Directly in Build)
-    if (serverVer.isNotEmpty && serverVer != appVersion) {
+    if (_forceUpdateRequired) {
       debugPrint("!!! FORCE UPDATE TRIGGERED IN BUILD !!!");
       return ForceUpdateScreen(
         requiredVersion: serverVer,
