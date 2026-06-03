@@ -15,7 +15,7 @@ int GetPhysicalDisplayCount() {
     UINT32 modeCount = 0;
 
     // First get required buffer sizes for ACTIVE paths only
-    LONG result = GetDisplayConfigBufferSizes(QDC_ACTIVE_PATHS, &pathCount, &modeCount);
+    LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &pathCount, &modeCount);
     if (result != ERROR_SUCCESS || pathCount == 0) {
         // Fallback: use GetSystemMetrics which at least counts logical monitors
         return GetSystemMetrics(SM_CMONITORS);
@@ -25,7 +25,7 @@ int GetPhysicalDisplayCount() {
     std::vector<DISPLAYCONFIG_MODE_INFO> modes(modeCount);
 
     result = QueryDisplayConfig(
-        QDC_ACTIVE_PATHS,
+        QDC_ONLY_ACTIVE_PATHS,
         &pathCount, paths.data(),
         &modeCount, modes.data(),
         nullptr
