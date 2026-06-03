@@ -12,6 +12,37 @@ BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMoni
     return TRUE;
 }
 
+bool IsVirtualMachine() {
+    HKEY hKey;
+    bool isVM = false;
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\Disk\\Enum", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        char data[512];
+        DWORD size = sizeof(data);
+        if (RegQueryValueExA(hKey, "0", NULL, NULL, (LPBYTE)data, &size) == ERROR_SUCCESS) {
+            if (strstr(data, "VBOX") != NULL ||
+                strstr(data, "VMware") != NULL ||
+                strstr(data, "QEMU") != NULL ||
+                strstr(data, "Virtual") != NULL ||
+                strstr(data, "PRL") != NULL) {
+                isVM = true;
+            }
+        }
+        RegCloseKey(hKey);
+    }
+    return isVM;
+}
+
+bool IsDebuggerAttached() {
+    if (IsDebuggerPresent()) {
+        return true;
+    }
+    BOOL isRemote = FALSE;
+    if (CheckRemoteDebuggerPresent(GetCurrentProcess(), &isRemote) && isRemote) {
+        return true;
+    }
+    return false;
+}
+
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
@@ -50,6 +81,12 @@ bool FlutterWindow::OnCreate() {
           EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, reinterpret_cast<LPARAM>(&count));
           int externalCount = count > 1 ? count - 1 : 0;
           result->Success(flutter::EncodableValue(externalCount));
+        } else if (call.method_name() == "isRooted") {
+          result->Success(flutter::EncodableValue(false));
+        } else if (call.method_name() == "isEmulator") {
+          result->Success(flutter::EncodableValue(IsVirtualMachine()));
+        } else if (call.method_name() == "isDebuggerConnected") {
+          result->Success(flutter::EncodableValue(IsDebuggerAttached()));
         } else {
           result->NotImplemented();
         }

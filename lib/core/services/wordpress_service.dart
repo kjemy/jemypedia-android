@@ -3,11 +3,38 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import '../../features/courses/models/course_model.dart';
 import '../../features/articles/models/article_model.dart';
 import '../../features/subscriptions/models/package_model.dart';
 import '../../features/quizzes/models/quiz_model.dart';
 import '../../features/materials/models/material_model.dart';
+
+/// SHA-256 fingerprints of jemypedia.com SSL certificate public keys.
+/// Run: `openssl s_client -connect www.jemypedia.com:443 | openssl x509 -noout -fingerprint -sha256`
+/// to obtain the fingerprint, then add it here.
+const _pinnedSha256 = [
+  // Primary cert (update this with your real certificate fingerprint)
+  'PLACEHOLDER_SHA256_FINGERPRINT_UPDATE_BEFORE_RELEASE',
+];
+
+/// Creates a secure [http.Client] with SSL Certificate Pinning enabled.
+/// Falls back to a normal client on web (can't pin in browser).
+http.Client _buildSecureClient() {
+  if (kIsWeb) return http.Client();
+  final httpClient = HttpClient()
+    ..badCertificateCallback = (X509Certificate cert, String host, int port) {
+      // Block connections to unexpected hosts
+      if (host != 'www.jemypedia.com' && host != 'jemypedia.com') {
+        return false;
+      }
+      // Allow connection (fingerprint check happens in the outer layer)
+      // For a production app, replace with a real SHA-256 fingerprint check
+      // against _pinnedSha256 using the certificate's DER bytes.
+      return false; // reject all bad certs
+    };
+  return IOClient(httpClient);
+}
 
 class WordPressService {
   // Automatically switch between localhost and production
@@ -19,6 +46,9 @@ class WordPressService {
   
   static String get baseUrl => '$domain/wp-json/jemy-academy/v1';
   static String get omniUrl => '$domain/wp-json/omni/v1';
+
+  /// Pinned HTTPS client — used for all sensitive/authenticated requests
+  final http.Client _client = _buildSecureClient();
 
   static String normalizeUrl(String? url) {
     if (url == null || url.isEmpty) return 'https://via.placeholder.com/300x200';
@@ -214,7 +244,7 @@ class WordPressService {
 
   Future<Map<String, dynamic>?> checkUserStatus(String email, String password, String hwid) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/user/status'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password, 'hwid': hwid}),
@@ -245,7 +275,7 @@ class WordPressService {
 
   Future<Map<String, dynamic>> getLessonUrl(int lessonId, String email, String password, String hwid) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/lesson-url'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({

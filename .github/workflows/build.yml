@@ -32,13 +32,13 @@ jobs:
         run: flutter pub get
 
       - name: Build Android APK
-        run: flutter build apk --debug
+        run: flutter build apk --release --obfuscate --split-debug-info=symbols/android
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: JemyPedia-Flutter-Android-APK
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
   build-windows:
@@ -61,7 +61,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows Executable
-        run: flutter build windows --release
+        run: flutter build windows --release --obfuscate --split-debug-info=symbols/windows
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
