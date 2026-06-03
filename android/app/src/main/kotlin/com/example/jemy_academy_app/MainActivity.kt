@@ -15,10 +15,10 @@ class MainActivity: FlutterActivity() {
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        io.flutter.plugin.common.MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call: io.flutter.plugin.common.MethodCall, result: io.flutter.plugin.common.MethodChannel.Result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "getExternalDisplaysCount" -> {
-                    val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+                    val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
                     val displays = displayManager.displays
                     var externalCount = 0
                     for (display in displays) {
