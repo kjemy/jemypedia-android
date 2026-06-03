@@ -62,32 +62,56 @@ class CoursesProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final results = await Future.wait([
-        _apiService.getCourses(null),
-        _apiService.getArticles(),
-        _apiService.getPackages(),
-        _apiService.getTicker(),
-        _apiService.getCategories(),
-        _apiService.getSections(),
-      ]);
+    // ─── Fetch each endpoint independently ───────────────────────────────────
+    // This ensures a failure in one endpoint (e.g. packages) does NOT
+    // prevent courses or ticker data from loading.
 
-      _courses = results[0] as List<CourseModel>;
-      _articles = results[1] as List<ArticleModel>;
-      _packages = results[2] as List<PackageModel>;
-      
-      final tickerData = results[3] as Map<String, dynamic>;
-      _tickerText = tickerData['text'] ?? 'Welcome to Jemy Academy!';
+    try {
+      _courses = await _apiService.getCourses(null);
+      debugPrint('✅ Courses loaded: ${_courses.length}');
+    } catch (e) {
+      debugPrint('❌ Courses error: $e');
+    }
+
+    try {
+      _articles = await _apiService.getArticles();
+    } catch (e) {
+      debugPrint('❌ Articles error: $e');
+    }
+
+    try {
+      _packages = await _apiService.getPackages();
+    } catch (e) {
+      debugPrint('❌ Packages error: $e');
+    }
+
+    try {
+      final tickerData = await _apiService.getTicker();
+      _tickerText = tickerData['text'] ?? 'Welcome to Jemypedia!';
       _tickerSpeed = (tickerData['speed'] ?? 10.0).toDouble();
       _requiredVersion = tickerData['required_version'] ?? '2.1.0';
       _updateUrl = tickerData['update_url'] ?? '';
-      
-      _categories = results[4] as List<dynamic>;
+      debugPrint('✅ Ticker loaded: version=$_requiredVersion');
+    } catch (e) {
+      debugPrint('❌ Ticker error: $e');
+    }
 
-      final List<dynamic> sectionsData = results[5] as List<dynamic>;
+    try {
+      _categories = await _apiService.getCategories();
+      debugPrint('✅ Categories loaded: ${_categories.length}');
+    } catch (e) {
+      debugPrint('❌ Categories error: $e');
+    }
+
+    try {
+      final sectionsData = await _apiService.getSections();
       _sections = sectionsData.map((s) => SectionModel.fromJson(s)).toList();
       _sections.sort((a, b) => a.order.compareTo(b.order));
+    } catch (e) {
+      debugPrint('❌ Sections error: $e');
+    }
 
+    try {
       final prefs = await SharedPreferences.getInstance();
       
       final cl = prefs.getStringList('completed_lessons') ?? [];
@@ -97,12 +121,11 @@ class CoursesProvider with ChangeNotifier {
       _watchLaterCourseIds = wl.map((e) => int.tryParse(e) ?? 0).where((id) => id > 0).toList();
       _watchLaterCourseIds = _watchLaterCourseIds.where((id) => _courses.any((c) => c.id == id)).toList();
       await prefs.setStringList('watch_later', _watchLaterCourseIds.map((e) => e.toString()).toList());
-
-      _updateAllProgresses();
-
     } catch (e) {
-      debugPrint('Error fetching data: $e');
+      debugPrint('❌ Prefs error: $e');
     }
+
+    _updateAllProgresses();
 
     _isLoading = false;
     notifyListeners();
