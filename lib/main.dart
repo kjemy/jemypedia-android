@@ -20,6 +20,8 @@ import 'package:jemypedia_app/core/providers/chat_provider.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:jemypedia_app/features/splash/splash_screen.dart';
+import 'package:jemypedia_app/core/services/security_service.dart';
+import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
 
 const String appVersion = '2.1.0';
 
@@ -54,6 +56,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => SecurityService()),
       ],
       child: const JemyAcademyApp(),
     ),
@@ -117,7 +120,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
               );
             };
 
-            return widget!;
+            return ProtectedScreenWrapper(child: widget!);
           },
           themeMode: themeProvider.themeMode,
           locale: localeProvider.locale,

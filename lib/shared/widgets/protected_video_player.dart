@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../core/services/security_service.dart';
 
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -39,6 +41,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   bool _hasError = false;
   String _errorDetail = '';
   bool _hasMarkedCompleted = false;
+  late SecurityService _securityService;
 
   @override
   void initState() {
@@ -62,7 +65,16 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       }
     });
 
+    _securityService = Provider.of<SecurityService>(context, listen: false);
+    _securityService.addListener(_onSecurityChanged);
+
     _initPlayer();
+  }
+
+  void _onSecurityChanged() {
+    if (_securityService.isSecurityCompromised) {
+      _player.pause();
+    }
   }
 
   @override
@@ -108,6 +120,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
 
   @override
   void dispose() {
+    _securityService.removeListener(_onSecurityChanged);
     _player.dispose();
     super.dispose();
   }

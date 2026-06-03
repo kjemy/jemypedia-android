@@ -3,6 +3,14 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
+
+BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
+    int* count = reinterpret_cast<int*>(dwData);
+    (*count)++;
+    return TRUE;
+}
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -13,6 +21,9 @@ bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
     return false;
   }
+
+  // Prevent screenshots and screen recording by setting window display affinity
+  SetWindowDisplayAffinity(GetHandle(), WDA_MONITOR);
 
   RECT frame = GetClientArea();
 
@@ -25,6 +36,25 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  
+  // Custom MethodChannel for security
+  flutter::MethodChannel<flutter::EncodableValue> channel(
+      flutter_controller_->engine()->messenger(), "jemypedia/security",
+      &flutter::StandardMethodCodec::GetInstance());
+
+  channel.SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "getExternalDisplaysCount") {
+          int count = 0;
+          EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, reinterpret_cast<LPARAM>(&count));
+          int externalCount = count > 1 ? count - 1 : 0;
+          result->Success(flutter::EncodableValue(externalCount));
+        } else {
+          result->NotImplemented();
+        }
+      });
+
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
