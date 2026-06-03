@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "jemy_academy_app" "\0"
+            VALUE "FileDescription", "Jemypedia" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "jemy_academy_app" "\0"
+            VALUE "InternalName", "Jemypedia" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "jemy_academy_app.exe" "\0"
-            VALUE "ProductName", "jemy_academy_app" "\0"
+            VALUE "OriginalFilename", "jemypedia.exe" "\0"
+            VALUE "ProductName", "Jemypedia" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
