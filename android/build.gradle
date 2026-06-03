@@ -28,6 +28,7 @@ tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
 
+// Inject namespace into legacy plugins that don't have one (required for AGP 8.x)
 subprojects {
     afterEvaluate { project ->
         if (project.hasProperty('android')) {

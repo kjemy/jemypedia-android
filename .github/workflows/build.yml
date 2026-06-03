@@ -15,23 +15,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Flutter
+      - name: Set up Flutter (latest stable)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: '3.32.2'
           channel: 'stable'
           cache: true
 
-      - name: Get dependencies
+      - name: Accept Android SDK licenses and install SDK 36
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Build Android APK
+      - name: Build Android APK (Release + Obfuscated)
         run: flutter build apk --release --obfuscate --split-debug-info=symbols/android
 
       - name: Upload APK Artifact
@@ -47,20 +52,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      - name: Set up Flutter (latest stable)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: '3.32.2'
           channel: 'stable'
           cache: true
 
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Get dependencies
+      - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Build Windows Executable
+      - name: Build Windows Executable (Release)
         run: flutter build windows --release --obfuscate --split-debug-info=symbols/windows
 
       - name: Upload Windows Artifact
