@@ -1,15 +1,45 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <vector>
 
 #include "flutter/generated_plugin_registrant.h"
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 
-BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-    int* count = reinterpret_cast<int*>(dwData);
-    (*count)++;
-    return TRUE;
+// Returns the number of PHYSICALLY connected display outputs (works in clone/extend/single modes)
+// Uses CCD (Connected Configuration Displays) API which is more reliable than EnumDisplayMonitors
+// EnumDisplayMonitors only counts LOGICAL monitors and misses clone mode entirely
+int GetPhysicalDisplayCount() {
+    UINT32 pathCount = 0;
+    UINT32 modeCount = 0;
+
+    // First get required buffer sizes for ACTIVE paths only
+    LONG result = GetDisplayConfigBufferSizes(QDC_ACTIVE_PATHS, &pathCount, &modeCount);
+    if (result != ERROR_SUCCESS || pathCount == 0) {
+        // Fallback: use GetSystemMetrics which at least counts logical monitors
+        return GetSystemMetrics(SM_CMONITORS);
+    }
+
+    std::vector<DISPLAYCONFIG_PATH_INFO> paths(pathCount);
+    std::vector<DISPLAYCONFIG_MODE_INFO> modes(modeCount);
+
+    result = QueryDisplayConfig(
+        QDC_ACTIVE_PATHS,
+        &pathCount, paths.data(),
+        &modeCount, modes.data(),
+        nullptr
+    );
+
+    if (result != ERROR_SUCCESS) {
+        return GetSystemMetrics(SM_CMONITORS);
+    }
+
+    // Each active path = one physical display target (source -> monitor connection)
+    // In clone mode: 1 source -> 2 targets = 2 paths (both active)
+    // In extend mode: 2 sources -> 2 targets = 2 paths (both active)
+    // In single monitor mode: 1 source -> 1 target = 1 path
+    return static_cast<int>(pathCount);
 }
 
 bool IsVirtualMachine() {
@@ -77,9 +107,10 @@ bool FlutterWindow::OnCreate() {
       [](const flutter::MethodCall<flutter::EncodableValue>& call,
          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
         if (call.method_name() == "getExternalDisplaysCount") {
-          int count = 0;
-          EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, reinterpret_cast<LPARAM>(&count));
-          int externalCount = count > 1 ? count - 1 : 0;
+          // GetPhysicalDisplayCount uses QueryDisplayConfig (CCD API) which correctly
+          // detects monitors in clone mode, unlike the old EnumDisplayMonitors approach
+          int totalPhysical = GetPhysicalDisplayCount();
+          int externalCount = totalPhysical > 1 ? totalPhysical - 1 : 0;
           result->Success(flutter::EncodableValue(externalCount));
         } else if (call.method_name() == "isRooted") {
           result->Success(flutter::EncodableValue(false));
