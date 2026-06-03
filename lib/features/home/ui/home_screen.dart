@@ -61,7 +61,21 @@ class _HomeScreenState extends State<HomeScreen> {
     debugPrint("URL    : $updateUrl");
     debugPrint("═════════════════════");
 
-    if (serverVer.isNotEmpty && serverVer != appVersion) {
+    bool needsUpdate = false;
+    try {
+      List<int> sParts = serverVer.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      List<int> aParts = appVersion.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      for (int i = 0; i < 3; i++) {
+        int s = i < sParts.length ? sParts[i] : 0;
+        int a = i < aParts.length ? aParts[i] : 0;
+        if (s > a) { needsUpdate = true; break; }
+        if (s < a) { break; }
+      }
+    } catch (_) {
+      needsUpdate = serverVer != appVersion && serverVer != "2.1.0"; // Fallback
+    }
+
+    if (serverVer.isNotEmpty && needsUpdate) {
       if (!_forceUpdateRequired) {
         setState(() {
           _forceUpdateRequired = true;
