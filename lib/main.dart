@@ -35,9 +35,7 @@ void main() async {
   // تفعيل نظام الحماية (منع تصوير الشاشة وتسجيل الفيديو)
   if (!kIsWeb) {
     try {
-      if (Platform.isAndroid) {
-        await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-      } else if (Platform.isIOS) {
+      if (Platform.isAndroid || Platform.isIOS) {
         await ScreenProtector.preventScreenshotOn();
       }
     } catch (e) {

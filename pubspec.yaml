@@ -13,7 +13,6 @@ dependencies:
 
   cupertino_icons: ^1.0.6
   device_info_plus: ^10.1.0
-  flutter_windowmanager: ^0.2.0
   screen_protector: ^1.0.0
   dio: ^5.9.2
   provider: ^6.1.5+1
