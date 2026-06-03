@@ -38,3 +38,7 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# Build the native security core as a DLL for Windows FFI
+add_library(security_core SHARED "../../src/native_security.cpp")
+target_compile_definitions(security_core PRIVATE "FLUTTER_VERSION=\"${FLUTTER_VERSION}\"")
