@@ -273,6 +273,22 @@ class WordPressService {
     }
   }
 
+  String _decryptUrl(String encryptedUrl) {
+    if (encryptedUrl.isEmpty || !encryptedUrl.startsWith('ENC:')) return encryptedUrl;
+    try {
+      final realPayload = encryptedUrl.substring(4);
+      final decoded = base64Decode(realPayload);
+      const key = "JemySuperSecretXORKey2026";
+      List<int> result = [];
+      for (int i = 0; i < decoded.length; i++) {
+        result.add(decoded[i] ^ key.codeUnitAt(i % key.length));
+      }
+      return utf8.decode(result);
+    } catch (e) {
+      return encryptedUrl;
+    }
+  }
+
   Future<Map<String, dynamic>> getLessonUrl(int lessonId, String email, String password, String hwid) async {
     try {
       final response = await _client.post(
@@ -290,7 +306,7 @@ class WordPressService {
       if (response.statusCode == 200) {
         return {
           'success': true, 
-          'video_url': data['video_url'],
+          'video_url': _decryptUrl(data['video_url'] ?? ''),
           'key_token': data['key_token'] ?? '' // Added key token support
         };
       } else {

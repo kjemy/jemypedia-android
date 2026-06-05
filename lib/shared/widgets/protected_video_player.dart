@@ -103,6 +103,12 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       // Open with explicit play: true to ensure autoplay
       // Inject the key_token securely into the HTTP request headers so the server can validate it
       final headers = <String, String>{};
+      
+      // 1. Spoof Website Headers to bypass BunnyCDN / Cloudflare Referer checks
+      headers['Referer'] = 'https://www.jemypedia.com/';
+      headers['Origin'] = 'https://www.jemypedia.com';
+
+      // 2. Add our custom key_token for our internal AES-128 protection
       if (widget.keyToken != null && widget.keyToken!.isNotEmpty) {
         headers['x-key-token'] = widget.keyToken!;
       }
