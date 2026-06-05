@@ -288,7 +288,11 @@ class WordPressService {
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return {'success': true, 'video_url': data['video_url']};
+        return {
+          'success': true, 
+          'video_url': data['video_url'],
+          'key_token': data['key_token'] ?? '' // Added key token support
+        };
       } else {
         return {'success': false, 'message': data['message'] ?? 'Unknown Error'};
       }

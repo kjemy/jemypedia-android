@@ -29,6 +29,7 @@ class CourseDetailScreen extends StatefulWidget {
 
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
   String? _currentVideoUrl;
+  String? _currentKeyToken;
   bool _isFetchingVideo = false;
   int? _selectedLessonId;
   LessonModel? _selectedLesson;
@@ -146,6 +147,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       if (mounted) {
         setState(() {
           _currentVideoUrl = result['success'] ? result['video_url'] : null;
+          _currentKeyToken = result['success'] ? result['key_token'] : null;
           _isFetchingVideo = false;
         });
         
@@ -332,6 +334,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 child: ProtectedVideoPlayer(
                   key: ValueKey(_currentVideoUrl ?? widget.course.introVideoUrl),
                   videoUrl: _currentVideoUrl ?? widget.course.introVideoUrl,
+                  keyToken: _currentKeyToken,
                   title: _selectedLesson?.getLocalizedTitle(locale) ?? AppLocalizations.tr(context, 'preview'),
                   watermarkText: (_watermarkConfig['text'] as String?)?.isNotEmpty == true
                       ? _watermarkConfig['text'] as String

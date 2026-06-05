@@ -10,6 +10,7 @@ import '../../core/services/security_service.dart';
 
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
+  final String? keyToken;
   final String title;
   final String? watermarkText;
   final String? watermarkImageUrl;
@@ -20,6 +21,7 @@ class ProtectedVideoPlayer extends StatefulWidget {
   const ProtectedVideoPlayer({
     super.key,
     required this.videoUrl,
+    this.keyToken,
     required this.title,
     this.watermarkText,
     this.watermarkImageUrl,
@@ -99,7 +101,13 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       }
 
       // Open with explicit play: true to ensure autoplay
-      await _player.open(Media(rawUrl), play: true);
+      // Inject the key_token securely into the HTTP request headers so the server can validate it
+      final headers = <String, String>{};
+      if (widget.keyToken != null && widget.keyToken!.isNotEmpty) {
+        headers['x-key-token'] = widget.keyToken!;
+      }
+
+      await _player.open(Media(rawUrl, httpHeaders: headers), play: true);
       
       // Some versions of media_kit might need an explicit play call
       _player.play();
