@@ -9,7 +9,7 @@ import '../../features/articles/models/article_model.dart';
 import '../../features/subscriptions/models/package_model.dart';
 import '../../features/quizzes/models/quiz_model.dart';
 import '../../features/materials/models/material_model.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 /// SHA-256 fingerprints of jemypedia.com SSL certificate public keys.
 /// Run: `openssl s_client -connect www.jemypedia.com:443 | openssl x509 -noout -fingerprint -sha256`
 /// to obtain the fingerprint, then add it here.
@@ -321,7 +321,7 @@ class WordPressService {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString('user_email');
     final password = prefs.getString('user_password');
-    final hwid = await _getHWID();
+    final hwid = await getDeviceId();
 
     if (email == null || password == null) return {'success': false};
 

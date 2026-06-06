@@ -7,7 +7,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/security_service.dart';
-
+import '../../core/services/wordpress_service.dart';
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final String? keyToken;
@@ -87,7 +87,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
         _lastLoggedPosition = currentPos;
         
         try {
-          final wpService = Provider.of<WordpressService>(context, listen: false);
+          final wpService = Provider.of<WordPressService>(context, listen: false);
           final result = await wpService.logWatchTime(widget.lessonId!, deltaMinutes);
           
           if (result['success'] == false && result['code'] == 'limit_exceeded') {
