@@ -317,6 +317,39 @@ class WordPressService {
     }
   }
 
+  Future<Map<String, dynamic>> logWatchTime(int lessonId, double minutesWatched) async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('user_email');
+    final password = prefs.getString('user_password');
+    final hwid = await _getHWID();
+
+    if (email == null || password == null) return {'success': false};
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/log-watch-time'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+          'hwid': hwid,
+          'lesson_id': lessonId,
+          'minutes_watched': minutesWatched,
+        }),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 403) {
+         final data = jsonDecode(response.body);
+         return {'success': false, 'message': data['message'] ?? 'Watch limit exceeded', 'code': 'limit_exceeded'};
+      }
+      return {'success': false};
+    } catch (e) {
+      return {'success': false};
+    }
+  }
+
   Future<List<CourseModel>> getCourses(String? token) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;

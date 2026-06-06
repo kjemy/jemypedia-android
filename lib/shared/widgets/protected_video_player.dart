@@ -11,6 +11,7 @@ import '../../core/services/security_service.dart';
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final String? keyToken;
+  final int? lessonId;
   final String title;
   final String? watermarkText;
   final String? watermarkImageUrl;
@@ -22,6 +23,7 @@ class ProtectedVideoPlayer extends StatefulWidget {
     super.key,
     required this.videoUrl,
     this.keyToken,
+    this.lessonId,
     required this.title,
     this.watermarkText,
     this.watermarkImageUrl,
@@ -42,6 +44,8 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   String _errorDetail = '';
   bool _hasMarkedCompleted = false;
   late SecurityService _securityService;
+  Timer? _watchTimer;
+  double _lastLoggedPosition = 0.0;
 
   @override
   void initState() {
@@ -67,8 +71,43 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
 
     _securityService = Provider.of<SecurityService>(context, listen: false);
     _securityService.addListener(_onSecurityChanged);
-
     _initPlayer();
+    _startWatchTimer();
+  }
+
+  void _startWatchTimer() {
+    if (widget.lessonId == null) return;
+    
+    _watchTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+      if (!_isInitialized || !_player.state.playing) return;
+      
+      final currentPos = _player.state.position.inSeconds.toDouble();
+      if (currentPos > _lastLoggedPosition) {
+        final deltaMinutes = (currentPos - _lastLoggedPosition) / 60.0;
+        _lastLoggedPosition = currentPos;
+        
+        try {
+          final wpService = Provider.of<WordpressService>(context, listen: false);
+          final result = await wpService.logWatchTime(widget.lessonId!, deltaMinutes);
+          
+          if (result['success'] == false && result['code'] == 'limit_exceeded') {
+            _player.pause();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result['message'] ?? 'Watch limit exceeded for this lesson.'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+              Navigator.of(context).pop();
+            }
+          }
+        } catch (e) {
+          debugPrint('Failed to log watch time: $e');
+        }
+      }
+    });
   }
 
   void _onSecurityChanged() {
@@ -109,6 +148,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       headers['Origin'] = 'https://www.jemypedia.com';
 
       // 2. Add our custom key_token for our internal AES-128 protection
+      headers['x-app-token'] = 'JEMY_SECURE_12345';
       if (widget.keyToken != null && widget.keyToken!.isNotEmpty) {
         headers['x-key-token'] = widget.keyToken!;
       }
@@ -132,6 +172,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
 
   @override
   void dispose() {
+    _watchTimer?.cancel();
     _securityService.removeListener(_onSecurityChanged);
     _player.dispose();
     super.dispose();

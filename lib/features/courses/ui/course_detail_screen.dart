@@ -335,6 +335,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   key: ValueKey(_currentVideoUrl ?? widget.course.introVideoUrl),
                   videoUrl: _currentVideoUrl ?? widget.course.introVideoUrl,
                   keyToken: _currentKeyToken,
+                  lessonId: _selectedLesson?.id,
                   title: _selectedLesson?.getLocalizedTitle(locale) ?? AppLocalizations.tr(context, 'preview'),
                   watermarkText: (_watermarkConfig['text'] as String?)?.isNotEmpty == true
                       ? _watermarkConfig['text'] as String
