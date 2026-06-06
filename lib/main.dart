@@ -20,6 +20,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:jemypedia_app/features/splash/splash_screen.dart';
 import 'package:jemypedia_app/core/services/security_service.dart';
 import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
+import 'package:jemypedia_app/core/services/hls_proxy_service.dart';
 
 import 'package:safe_device/safe_device.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +34,9 @@ void main() async {
   } catch (e) {
     debugPrint("MediaKit initialization error: $e");
   }
+
+  // Start local HLS proxy to inject security headers on all video requests
+  await hlsProxy.start();
 
   // تفعيل نظام الحماية (منع تصوير الشاشة وتسجيل الفيديو)
   if (!kIsWeb) {

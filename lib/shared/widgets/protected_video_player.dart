@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/security_service.dart';
 import '../../core/services/wordpress_service.dart';
+import '../../core/services/hls_proxy_service.dart';
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final String? keyToken;
@@ -129,7 +130,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
     try {
       final rawUrl = widget.videoUrl.trim();
       debugPrint("--- VIDEO PLAYER DEBUG ---");
-      debugPrint("URL: $rawUrl");
+      debugPrint("Original URL: $rawUrl");
 
       // Reset state
       if (mounted) {
@@ -139,25 +140,21 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
         });
       }
 
-      // Open with explicit play: true to ensure autoplay
-      // Inject the key_token securely into the HTTP request headers so the server can validate it
-      final headers = <String, String>{};
-      
-      // 1. Spoof Website Headers to bypass BunnyCDN / Cloudflare Referer checks
-      headers['Referer'] = 'https://www.jemypedia.com/';
-      headers['Origin'] = 'https://www.jemypedia.com';
+      // Route the video URL through our local HLS proxy.
+      // The proxy injects ALL security headers (x-app-token, Referer, etc.)
+      // into EVERY request: the .m3u8 manifest, the .key file, and all .ts segments.
+      // This is the ONLY reliable way to pass headers for AES-128 encrypted HLS.
+      final proxyUrl = hlsProxy.isRunning
+          ? hlsProxy.proxyUrl(rawUrl)
+          : rawUrl;
 
-      // 2. Add our custom key_token for our internal AES-128 protection
-      headers['x-app-token'] = 'JEMY_SECURE_12345';
-      if (widget.keyToken != null && widget.keyToken!.isNotEmpty) {
-        headers['x-key-token'] = widget.keyToken!;
-      }
+      debugPrint("Proxy URL: $proxyUrl");
 
-      await _player.open(Media(rawUrl, httpHeaders: headers), play: true);
-      
+      await _player.open(Media(proxyUrl), play: true);
+
       // Some versions of media_kit might need an explicit play call
       _player.play();
-      
+
       if (mounted) setState(() => _isInitialized = true);
     } catch (e) {
       debugPrint("Video Player Error: $e");
