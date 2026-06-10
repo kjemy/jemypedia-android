@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -300,20 +301,29 @@ class WordPressService {
           'password': password,
           'hwid': hwid,
         }),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return {
           'success': true, 
           'video_url': _decryptUrl(data['video_url'] ?? ''),
-          'key_token': data['key_token'] ?? '' // Added key token support
+          'key_token': data['key_token'] ?? '',
         };
       } else {
-        return {'success': false, 'message': data['message'] ?? 'Unknown Error'};
+        // WordPress REST API errors come in format: {code, message, data:{status}}
+        final errorCode = data['code'] as String? ?? '';
+        final message = data['message'] as String? ?? 'Unknown Error';
+        return {
+          'success': false,
+          'code': errorCode,
+          'message': message,
+        };
       }
+    } on TimeoutException {
+      return {'success': false, 'code': 'timeout', 'message': 'انتهت مهلة الاتصال. يرجى المحاولة مجدداً.'};
     } catch (e) {
-      return {'success': false, 'message': 'Network Error'};
+      return {'success': false, 'code': 'network_error', 'message': 'خطأ في الشبكة. يرجى التحقق من اتصالك.'};
     }
   }
 
@@ -336,16 +346,21 @@ class WordPressService {
           'lesson_id': lessonId,
           'minutes_watched': minutesWatched,
         }),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 10));
 
+      final data = jsonDecode(response.body);
+      
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else if (response.statusCode == 403) {
-         final data = jsonDecode(response.body);
-         return {'success': false, 'message': data['message'] ?? 'Watch limit exceeded', 'code': 'limit_exceeded'};
+        // Server returns {success, code?, message?, lesson_watched_minutes, course_watched_minutes}
+        return data is Map<String, dynamic> ? data : {'success': true};
+      } else {
+        // WP_Error format: {code, message, data:{status}}
+        final errorCode = data['code'] as String? ?? 'unknown_error';
+        final message = data['message'] as String? ?? 'Watch limit exceeded';
+        return {'success': false, 'code': errorCode, 'message': message};
       }
-      return {'success': false};
     } catch (e) {
+      debugPrint('logWatchTime error: $e');
       return {'success': false};
     }
   }

@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart';
 class HlsProxyService {
   HttpServer? _server;
   int _port = 0;
+  String? _keyToken;
 
   static const _appToken = 'JEMY_SECURE_12345';
   static const _referer = 'https://www.jemypedia.com/';
@@ -24,6 +25,11 @@ class HlsProxyService {
 
   int get port => _port;
   bool get isRunning => _server != null;
+
+  /// Store the key token for the active playback session
+  void setKeyToken(String? token) {
+    _keyToken = token;
+  }
 
   /// Start the local proxy server. Call this once (e.g., in main.dart).
   Future<void> start() async {
@@ -83,11 +89,25 @@ class HlsProxyService {
       proxyReq.headers.set('Origin', _origin);
       proxyReq.headers.set('User-Agent', _userAgent);
       proxyReq.headers.set('x-app-token', _appToken);
+      if (_keyToken != null && _keyToken!.isNotEmpty) {
+        proxyReq.headers.set('x-key-token', _keyToken!);
+      }
 
       final proxyResp = await proxyReq.close();
 
       // Determine content type from response
       final contentType = proxyResp.headers.contentType?.mimeType ?? 'application/octet-stream';
+
+      // If upstream failed, forward the error status code directly to the player
+      if (proxyResp.statusCode != 200) {
+        request.response.statusCode = proxyResp.statusCode;
+        request.response.headers.contentType = ContentType.parse(contentType);
+        request.response.headers.set('Access-Control-Allow-Origin', '*');
+        await proxyResp.pipe(request.response);
+        client.close();
+        return;
+      }
+
       final isM3u8 = contentType.contains('mpegurl') ||
           rawUrl.toLowerCase().contains('.m3u8');
 
@@ -109,6 +129,7 @@ class HlsProxyService {
             ContentType.parse(contentType);
         request.response.headers.set('Access-Control-Allow-Origin', '*');
         await proxyResp.pipe(request.response);
+        client.close();
         return; // pipe() closes the response
       }
 

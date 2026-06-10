@@ -135,37 +135,116 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       final password = authProvider.userPassword ?? '';
 
       if (email.isEmpty || password.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expired. Please log in again.')),
-        );
-        setState(() { _isFetchingVideo = false; });
+        if (mounted) {
+          setState(() { _isFetchingVideo = false; });
+          _showErrorDialog(
+            title: 'انتهت الجلسة | Session Expired',
+            message: 'يرجى تسجيل الدخول مرة أخرى.\nPlease log in again.',
+          );
+        }
         return;
       }
 
       final result = await provider.getLessonVideoUrl(lesson.id, email, password, hwid);
       
       if (mounted) {
-        setState(() {
-          _currentVideoUrl = result['success'] ? result['video_url'] : null;
-          _currentKeyToken = result['success'] ? result['key_token'] : null;
-          _isFetchingVideo = false;
-        });
-        
-        if (!result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Failed to fetch video.'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
+        if (result['success'] == true) {
+          setState(() {
+            _currentVideoUrl = result['video_url'];
+            _currentKeyToken = result['key_token'];
+            _isFetchingVideo = false;
+          });
+        } else {
+          setState(() {
+            _currentVideoUrl = null;
+            _currentKeyToken = null;
+            _isFetchingVideo = false;
+          });
+          
+          final msg = result['message'] as String? ?? '';
+          final code = result['code'] as String? ?? '';
+
+          // Handle limit_exceeded (views count)
+          if (code == 'views_limit_exceeded' || msg.contains('الحد الأقصى')) {
+            _showErrorDialog(
+              title: 'تجاوزت الحد المسموح',
+              message: msg.isNotEmpty ? msg : 'لقد تجاوزت الحد الأقصى لعدد مرات مشاهدة هذا الدرس.',
+              icon: Icons.block_rounded,
+              iconColor: Colors.orange,
+            );
+          } else if (code == 'no_subscription' || msg.contains('subscription')) {
+            _showErrorDialog(
+              title: 'غير مشترك | No Access',
+              message: 'ليس لديك صلاحية لمشاهدة هذا الدرس. يرجى الاشتراك أولاً.',
+              icon: Icons.lock_rounded,
+              iconColor: Colors.redAccent,
+            );
+          } else if (code == 'invalid_credentials') {
+            _showErrorDialog(
+              title: 'خطأ في تسجيل الدخول',
+              message: 'بيانات الدخول غير صحيحة. يرجى تسجيل الخروج والدخول مجدداً.',
+              icon: Icons.no_accounts_rounded,
+              iconColor: Colors.red,
+            );
+          } else {
+            _showErrorDialog(
+              title: 'خطأ',
+              message: msg.isNotEmpty ? msg : 'حدث خطأ أثناء تحميل الفيديو. يرجى المحاولة مجدداً.',
+            );
+          }
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() { _isFetchingVideo = false; });
+        _showErrorDialog(
+          title: 'خطأ في الشبكة',
+          message: 'تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.',
+          icon: Icons.wifi_off_rounded,
+        );
       }
     }
   }
+
+  void _showErrorDialog({
+    required String title,
+    required String message,
+    IconData icon = Icons.error_outline_rounded,
+    Color iconColor = Colors.redAccent,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2030),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+          textAlign: TextAlign.right,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('حسناً', style: TextStyle(color: AppColors.accentNeon, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _playNextLesson() {
     if (_selectedLessonId == null) return;

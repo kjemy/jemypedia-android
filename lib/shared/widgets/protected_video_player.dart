@@ -91,17 +91,54 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
           final wpService = Provider.of<WordPressService>(context, listen: false);
           final result = await wpService.logWatchTime(widget.lessonId!, deltaMinutes);
           
-          if (result['success'] == false && result['code'] == 'limit_exceeded') {
+          final code = result['code'] as String? ?? '';
+          final isLimitExceeded = result['success'] == false && 
+              (code == 'limit_exceeded' || code.contains('limit'));
+          
+          if (isLimitExceeded) {
+            timer.cancel();
             _player.pause();
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] ?? 'Watch limit exceeded for this lesson.'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 5),
+              final msg = result['message'] as String? ?? 
+                  'لقد تجاوزت الحد الأقصى للمشاهدة المسموح به لهذا الدرس.';
+              await showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: const Color(0xFF1E2030),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.timer_off_rounded, color: Colors.orange, size: 28),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'انتهى وقت المشاهدة',
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                  content: Text(
+                    msg,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+                    textAlign: TextAlign.right,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        if (mounted) Navigator.of(context).pop();
+                      },
+                      child: const Text(
+                        'حسناً، خروج',
+                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               );
-              Navigator.of(context).pop();
             }
           }
         } catch (e) {
@@ -110,6 +147,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       }
     });
   }
+
 
   void _onSecurityChanged() {
     if (_securityService.isSecurityCompromised) {
@@ -140,8 +178,15 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
         });
       }
 
+      // Pass the session key token to the proxy so it can inject
+      // it as x-key-token header for AES-128 encrypted HLS .key file requests.
+      if (widget.keyToken != null && widget.keyToken!.isNotEmpty) {
+        hlsProxy.setKeyToken(widget.keyToken);
+        debugPrint("Key Token set in proxy: ${widget.keyToken}");
+      }
+
       // Route the video URL through our local HLS proxy.
-      // The proxy injects ALL security headers (x-app-token, Referer, etc.)
+      // The proxy injects ALL security headers (x-app-token, x-key-token, Referer, etc.)
       // into EVERY request: the .m3u8 manifest, the .key file, and all .ts segments.
       // This is the ONLY reliable way to pass headers for AES-128 encrypted HLS.
       final proxyUrl = hlsProxy.isRunning
@@ -219,25 +264,14 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
             children: [
               const CircularProgressIndicator(color: AppColors.accentNeon),
               const SizedBox(height: 20),
-              const Text("Attempting to connect...", style: TextStyle(color: Colors.white54, fontSize: 12)),
-              const SizedBox(height: 5),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(widget.videoUrl, 
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white24, fontSize: 10, fontStyle: FontStyle.italic)),
+              const Text(
+                "جاري تحضير الفيديو...",
+                style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                child: Text(
-                  widget.videoUrl,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white24, fontSize: 10, fontStyle: FontStyle.italic),
-                ),
+              const SizedBox(height: 6),
+              const Text(
+                "Preparing video...",
+                style: TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
           ),
