@@ -67,24 +67,24 @@ static bool CheckJackPhysicalConnection(IMMDevice* pDevice) {
     IDeviceTopology* pTopology = NULL;
     HRESULT hr = pDevice->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, NULL, (void**)&pTopology);
     if (FAILED(hr) || !pTopology) {
-        // Cannot get topology - conservatively allow (driver may not support it)
-        return true;
+        // STRICT SECURITY: If we can't get topology, assume no physical headphone jack
+        return false;
     }
 
     IConnector* pConnFrom = NULL;
     hr = pTopology->GetConnector(0, &pConnFrom);
     pTopology->Release();
-    if (FAILED(hr) || !pConnFrom) return true;
+    if (FAILED(hr) || !pConnFrom) return false;
 
     IConnector* pConnTo = NULL;
     hr = pConnFrom->GetConnectedTo(&pConnTo);
     pConnFrom->Release();
-    if (FAILED(hr) || !pConnTo) return true;
+    if (FAILED(hr) || !pConnTo) return false;
 
     IPart* pPart = NULL;
     hr = pConnTo->QueryInterface(__uuidof(IPart), (void**)&pPart);
     pConnTo->Release();
-    if (FAILED(hr) || !pPart) return true;
+    if (FAILED(hr) || !pPart) return false;
 
     // Use IKsJackDescription - available in all Windows SDK versions
     // KSJACK_DESCRIPTION.IsConnected = TRUE means device physically plugged in
@@ -105,8 +105,8 @@ static bool CheckJackPhysicalConnection(IMMDevice* pDevice) {
         }
         pJackDesc->Release();
     } else {
-        // Driver does not support jack description API - conservatively allow
-        isConnected = true;
+        // STRICT SECURITY: Driver does not support jack description API
+        isConnected = false;
     }
 
     pPart->Release();
