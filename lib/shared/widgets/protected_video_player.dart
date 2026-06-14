@@ -157,16 +157,24 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       if (!_isSecurityDialogShowing && mounted) {
         _isSecurityDialogShowing = true;
         
-        String reason = 'تم اكتشاف تهديد أمني.';
-        if (_securityService.isBlacklistedProcessRunning || _securityService.isDebuggerConnected) {
-           reason = 'تم اكتشاف برنامج تسجيل شاشة أو صوت أو مصحح أخطاء. يرجى إغلاقه فوراً.';
+        String reason = 'تم اكتشاف محاولة تحايل.';
+        if (_securityService.isBlacklistedProcessRunning || _securityService.isDebuggerConnected || _securityService.isScreenRecording) {
+           reason = 'تم اكتشاف برنامج تسجيل شاشة أو صوت. يرجى إغلاقه فوراً.';
         } else if (_securityService.isBluetoothEnabled) {
-           reason = 'يرجى إغلاق البلوتوث وتوصيل سماعة سلكية لتشغيل الفيديو.';
+           reason = 'من فضلك تأكد من إغلاق البلوتوث.';
         } else if (!_securityService.isWiredHeadsetOn) {
-           reason = 'برجاء توصيل سماعة أذن سلكية (Wired Headphone) لتشغيل الصوت.';
+           reason = 'تأكد من توصيل سماعة الرأس (سلكية) لتشغيل الصوت.';
         } else if (_securityService.isExternalDisplayConnected) {
-           reason = 'تم اكتشاف شاشة خارجية أو بث. يرجى فصله لتشغيل الفيديو.';
+           reason = 'أغلق الكاست أو الميرور أو الشاشة الخارجية.';
         }
+
+        String fullWarning = '$reason\n\n'
+            'التنبيهات:\n'
+            '• تأكد من إغلاق البلوتوث\n'
+            '• تأكد من توصيل سماعة الرأس\n'
+            '• اقفل الكاست، الميرور، وكل شيء مرتبط بشاشات خارجية\n'
+            '• أغلق برامج تسجيل الشاشة والصوت تماماً\n\n'
+            'أي محاولة للتحايل بأي شكل من الأشكال تُعرضك للمساءلة القانونية وتم تسجيل هذه المحاولة.';
 
         await showDialog(
           context: context,
@@ -190,7 +198,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                 ],
               ),
               content: Text(
-                '$reason\n\nلن تتمكن من استكمال المشاهدة حتى يتم حل هذه المشكلة.',
+                fullWarning,
                 style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
                 textAlign: TextAlign.right,
               ),

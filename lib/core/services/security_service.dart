@@ -29,6 +29,7 @@ class SecurityService extends ChangeNotifier {
   bool get isRooted => _isRooted;
   bool get isEmulator => _isEmulator;
   bool get isDebuggerConnected => _isDebuggerConnected;
+  bool get isScreenRecording => _isScreenRecording;
   bool get isBluetoothEnabled => _isBluetoothEnabled;
   bool get isWiredHeadsetOn => _isWiredHeadsetOn;
   bool get isBlacklistedProcessRunning => _isBlacklistedProcessRunning;

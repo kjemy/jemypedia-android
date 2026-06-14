@@ -24,6 +24,7 @@ const _pinnedSha256 = [
 http.Client _buildSecureClient() {
   if (kIsWeb) return http.Client();
   final httpClient = HttpClient()
+    ..userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     ..badCertificateCallback = (X509Certificate cert, String host, int port) {
       // Only allow our known hosts — reject anything else
       final allowedHosts = ['www.jemypedia.com', 'jemypedia.com'];
@@ -110,7 +111,7 @@ class WordPressService {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final platform = kIsWeb ? 'web' : (Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'windows'));
-      final response = await http.get(Uri.parse('$omniUrl/ticker?cb=$ts&platform=$platform')).timeout(const Duration(seconds: 15));
+      final response = await _client.get(Uri.parse('$omniUrl/ticker?cb=$ts&platform=$platform')).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) return jsonDecode(response.body);
       return {'text': 'Welcome to Jemy Academy!', 'active': false};
     } catch (e) {
@@ -120,7 +121,7 @@ class WordPressService {
 
   Future<List<dynamic>> getCategories() async {
     try {
-      final response = await http.get(Uri.parse('$omniUrl/categories')).timeout(const Duration(seconds: 15));
+      final response = await _client.get(Uri.parse('$omniUrl/categories')).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((cat) {
@@ -147,7 +148,7 @@ class WordPressService {
 
   Future<List<dynamic>> getInstructors() async {
     try {
-      final response = await http.get(Uri.parse('$omniUrl/instructors')).timeout(const Duration(seconds: 10));
+      final response = await _client.get(Uri.parse('$omniUrl/instructors')).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((group) {
@@ -168,7 +169,7 @@ class WordPressService {
 
   Future<List<dynamic>> getPartners() async {
     try {
-      final response = await http.get(Uri.parse('$omniUrl/partners')).timeout(const Duration(seconds: 10));
+      final response = await _client.get(Uri.parse('$omniUrl/partners')).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((group) {
@@ -189,7 +190,7 @@ class WordPressService {
 
   Future<Map<String, String>> getTerms() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/terms')).timeout(const Duration(seconds: 10));
+      final response = await _client.get(Uri.parse('$baseUrl/terms')).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return {
@@ -207,7 +208,7 @@ class WordPressService {
     try {
       final cacheBuster = DateTime.now().millisecondsSinceEpoch;
       final cleanEmail = email.trim().toLowerCase();
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/watermark-config?email=$cleanEmail&t=$cacheBuster'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -228,7 +229,7 @@ class WordPressService {
   // Example Login Method (JWT)
   Future<String?> login(String email, String password) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
@@ -337,7 +338,7 @@ class WordPressService {
     if (email == null || password == null) return {'success': false};
 
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/log-watch-time'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -369,7 +370,7 @@ class WordPressService {
   Future<List<CourseModel>> getCourses(String? token) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/courses?cb=$timestamp'),
         headers: {
           'Content-Type': 'application/json',
@@ -390,7 +391,7 @@ class WordPressService {
   Future<List<ArticleModel>> getArticles() async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/articles?cb=$timestamp'),
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 15));
@@ -408,7 +409,7 @@ class WordPressService {
   Future<List<PackageModel>> getPackages() async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/packages?cb=$timestamp'),
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 15));
@@ -426,7 +427,7 @@ class WordPressService {
   Future<CourseModel?> getCourseById(int id) async {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/courses?id=$id&cb=$ts'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -445,7 +446,7 @@ class WordPressService {
   Future<List<dynamic>> getSections() async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$omniUrl/sections?cb=$timestamp'),
       ).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) return jsonDecode(response.body);
@@ -459,7 +460,7 @@ class WordPressService {
   // ─── Certificates ────────────────────────────────────────────────
   Future<Map<String, dynamic>?> getCertificateTemplate(int courseId) async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$omniUrl/certificate-template/$courseId'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) return jsonDecode(response.body);
@@ -473,7 +474,7 @@ class WordPressService {
     final cleanEmail = email.trim().toLowerCase();
     final cacheBuster = DateTime.now().millisecondsSinceEpoch;
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/my-certificates?email=$cleanEmail&t=$cacheBuster'),
       ).timeout(const Duration(seconds: 5));
       
@@ -490,7 +491,7 @@ class WordPressService {
 
   Future<Map<String, dynamic>?> issueCertificate(String email, int courseId) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/issue-certificate'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'course_id': courseId}),
@@ -506,7 +507,7 @@ class WordPressService {
   Future<List<QuizModel>> getCourseQuizzes(int courseId) async {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/course/$courseId/quizzes?cb=$ts'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -521,7 +522,7 @@ class WordPressService {
 
   Future<QuizModel?> getQuiz(int quizId) async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/quiz/$quizId'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -537,7 +538,7 @@ class WordPressService {
   Future<List<MaterialModel>> getCourseMaterials(int courseId) async {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/course/$courseId/materials?cb=$ts'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -553,7 +554,7 @@ class WordPressService {
   Future<List<MaterialModel>> getLessonMaterials(int lessonId) async {
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/lesson/$lessonId/materials?cb=$ts'),
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
