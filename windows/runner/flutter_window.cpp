@@ -92,8 +92,10 @@ static bool CheckJackPhysicalConnection(IMMDevice* pDevice) {
         for (UINT j = 0; j < jackCount; j++) {
             KSJACK_DESCRIPTION2 desc2 = {};
             if (SUCCEEDED(pJackDesc2->GetJackDescription2(j, &desc2))) {
-                if (desc2.JackPresenceDetectionCapability != JACKDESC2_PRESENCE_DETECT_CAPABILITY_NONE &&
-                    (desc2.JackPresenceDetectionState & JACKDESC2_PRESENCE_DETECT_SET)) {
+                // JackPresenceDetectionCapability != 0 means jack can detect plug presence
+                // JackPresenceDetectionState bit 1 means headphone is currently inserted
+                if (desc2.JackPresenceDetectionCapability != 0 &&
+                    (desc2.JackPresenceDetectionState & 0x1)) {
                     isConnected = true;
                     break;
                 }
