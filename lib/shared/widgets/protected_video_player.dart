@@ -157,15 +157,6 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       if (!_isSecurityDialogShowing && mounted) {
         _isSecurityDialogShowing = true;
 
-        String fullWarning = 'لضمان استمرار عمل التطبيق، يُرجى القيام بما يلي:\n\n'
-            '• تأكد من توصيل سماعات الأذن السلكية\n'
-            '• إيقاف تشغيل البلوتوث\n'
-            '• إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية\n'
-            '• إيقاف أي برنامج لتسجيل الشاشة أو الصوت\n'
-            '• إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق\n\n'
-            '⚠️ تنبيه قانوني:\n'
-            'أي محاولة للتحايل على هذا التطبيق أو انتهاك حقوق المحتوى، بأي شكل من الأشكال، تُعدّ جريمة يُعاقب عليها القانون. وقد تم تسجيل هذه المحاولة وحفظها.';
-
         final bloodyRed = const Color(0xFF8A0303);
 
         await showDialog(
@@ -173,38 +164,130 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
           barrierDismissible: false,
           builder: (ctx) => PopScope(
             canPop: false,
-            child: AlertDialog(
-              backgroundColor: const Color(0xFF1E2030),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Row(
-                children: [
-                  Icon(Icons.warning_rounded, color: bloodyRed, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'تم اكتشاف اشتباه في تحايل على التطبيق',
-                      style: TextStyle(color: bloodyRed, fontSize: 15, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.right,
+            child: Consumer<SecurityService>(
+              builder: (dialogCtx, secService, _) {
+                final checks = [
+                  {
+                    'text': 'توصيل سماعات الأذن السلكية (مطلوب سماعة سلكية)',
+                    'isOk': secService.isWiredHeadsetOn,
+                  },
+                  {
+                    'text': 'إيقاف تشغيل البلوتوث (Bluetooth)',
+                    'isOk': !secService.isBluetoothEnabled,
+                  },
+                  {
+                    'text': 'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
+                    'isOk': !secService.isExternalDisplayConnected,
+                  },
+                  {
+                    'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت',
+                    'isOk': !secService.isBlacklistedProcessRunning,
+                  },
+                  {
+                    'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء)',
+                    'isOk': !(secService.isRooted || secService.isEmulator || secService.isDebuggerConnected),
+                  },
+                ];
+
+                // If all checks are ok, automatically close the dialog!
+                if (!secService.isSecurityCompromised) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.of(dialogCtx).pop();
+                  });
+                }
+
+                return AlertDialog(
+                  backgroundColor: const Color(0xFF1E2030),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Icon(Icons.warning_rounded, color: bloodyRed, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: const Text(
+                          'تم اكتشاف اشتباه في تحايل على التطبيق',
+                          style: TextStyle(color: bloodyRed, fontSize: 15, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'لضمان استمرار عمل التطبيق، يُرجى القيام بما يلي:',
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        ...checks.map((check) {
+                          final bool isOk = check['isOk'] as bool;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Row(
+                              textDirection: TextDirection.rtl,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isOk ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                  color: isOk ? Colors.greenAccent : bloodyRed,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    check['text'] as String,
+                                    textDirection: TextDirection.rtl,
+                                    style: TextStyle(
+                                      color: isOk ? Colors.white70 : Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: isOk ? FontWeight.normal : FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                        const Divider(color: Colors.white10),
+                        const SizedBox(height: 8),
+                        Row(
+                          textDirection: TextDirection.rtl,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.gavel_rounded, color: bloodyRed.withOpacity(0.8), size: 18),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'تنبيه قانوني:\nأي محاولة للتحايل على هذا التطبيق أو انتهاك حقوق المحتوى، بأي شكل من الأشكال، تُعدّ جريمة يُعاقب عليها القانون. وقد تم تسجيل هذه المحاولة وحفظها.',
+                                textDirection: TextDirection.rtl,
+                                style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              content: Text(
-                fullWarning,
-                style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
-                textAlign: TextAlign.right,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                  },
-                  child: Text(
-                    'خروج من الدرس',
-                    style: TextStyle(color: bloodyRed, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(dialogCtx).pop();
+                        if (mounted) Navigator.of(context).pop();
+                      },
+                      child: Text(
+                        'خروج من الدرس',
+                        style: TextStyle(color: bloodyRed, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         );

@@ -91,35 +91,56 @@ class ProtectedScreenWrapper extends StatelessWidget {
                               ),
                               const SizedBox(height: 12),
                               ...[
-                                'تأكد من توصيل سماعات الأذن السلكية',
-                                'إيقاف تشغيل البلوتوث',
-                                'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
-                                'إيقاف أي برنامج لتسجيل الشاشة أو الصوت',
-                                'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق',
-                              ].map((item) => Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                    child: Row(
-                                      textDirection: TextDirection.rtl,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          '• ',
-                                          style: TextStyle(color: bloodyRed, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            item,
-                                            textDirection: TextDirection.rtl,
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 14,
-                                              height: 1.5,
+                                {
+                                  'text': 'توصيل سماعات الأذن السلكية (مطلوب سماعة سلكية)',
+                                  'isOk': securityService.isWiredHeadsetOn,
+                                },
+                                {
+                                  'text': 'إيقاف تشغيل البلوتوث (Bluetooth)',
+                                  'isOk': !securityService.isBluetoothEnabled,
+                                },
+                                {
+                                  'text': 'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
+                                  'isOk': !securityService.isExternalDisplayConnected,
+                                },
+                                {
+                                  'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت (مثل OBS، تسجيل الصوت، إلخ)',
+                                  'isOk': !securityService.isBlacklistedProcessRunning,
+                                },
+                                {
+                                  'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء، إلخ)',
+                                  'isOk': !(securityService.isRooted || securityService.isEmulator || securityService.isDebuggerConnected),
+                                },
+                              ].map((check) {
+                                    final bool isOk = check['isOk'] as bool;
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                      child: Row(
+                                        textDirection: TextDirection.rtl,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            isOk ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                            color: isOk ? Colors.greenAccent : bloodyRed,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              check['text'] as String,
+                                              textDirection: TextDirection.rtl,
+                                              style: TextStyle(
+                                                color: isOk ? Colors.white70 : Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: isOk ? FontWeight.normal : FontWeight.bold,
+                                                height: 1.5,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  )),
+                                        ],
+                                      ),
+                                    );
+                                  }),
                               const SizedBox(height: 20),
                               const Divider(color: Colors.white10),
                               const SizedBox(height: 12),
