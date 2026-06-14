@@ -205,7 +205,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                       Icon(Icons.warning_rounded, color: bloodyRed, size: 28),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: const Text(
+                        child: Text(
                           'تم اكتشاف اشتباه في تحايل على التطبيق',
                           style: TextStyle(color: bloodyRed, fontSize: 15, fontWeight: FontWeight.bold),
                           textAlign: TextAlign.right,
