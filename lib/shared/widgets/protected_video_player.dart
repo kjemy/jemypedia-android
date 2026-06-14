@@ -157,12 +157,13 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       if (!_isSecurityDialogShowing && mounted) {
         _isSecurityDialogShowing = true;
 
-        String fullWarning = 'تم تسجيل محاولة تحايل.\n\n'
-            'لضمان استمرار عمل التطبيق، يرجى إغلاق:\n'
-            '• اتصال البلوتوث\n'
-            '• الكاست، الميرور، وأي ربط بشاشات خارجية\n'
-            '• برامج تسجيل الشاشة والصوت وأي أدوات أخرى متعارضة\n\n'
-            'تنبيه قانوني: أي محاولة للتحايل بأي شكل من الأشكال تُعرضك للمساءلة القانونية، وقد تم تسجيل هذه المحاولة.';
+        String fullWarning = 'لضمان استمرار عمل التطبيق، يُرجى القيام بما يلي:\n\n'
+            '• إيقاف تشغيل البلوتوث\n'
+            '• إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية\n'
+            '• إيقاف أي برنامج لتسجيل الشاشة أو الصوت\n'
+            '• إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق\n\n'
+            '⚠️ تنبيه قانوني:\n'
+            'أي محاولة للتحايل على هذا التطبيق أو انتهاك حقوق المحتوى، بأي شكل من الأشكال، تُعدّ جريمة يُعاقب عليها القانون. وقد تم تسجيل هذه المحاولة وحفظها.';
 
         final bloodyRed = const Color(0xFF8A0303);
 
@@ -180,8 +181,8 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'تم تسجيل محاولة تحايل',
-                      style: TextStyle(color: bloodyRed, fontSize: 16, fontWeight: FontWeight.bold),
+                      'تم اكتشاف اشتباه في تحايل على التطبيق',
+                      style: TextStyle(color: bloodyRed, fontSize: 15, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.right,
                     ),
                   ),

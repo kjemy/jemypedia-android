@@ -45,7 +45,9 @@ jobs:
           retention-days: 30
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
+    env:
+      CMAKE_GENERATOR: "Visual Studio 17 2022"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
