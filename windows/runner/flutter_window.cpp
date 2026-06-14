@@ -17,6 +17,7 @@
 #include <mmdeviceapi.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <bluetoothapis.h>
+#include <devicetopology.h>
 
 #pragma comment(lib, "Bthprops.lib")
 
@@ -32,110 +33,174 @@ bool IsBluetoothRadioEnabled() {
     return false;
 }
 
+// Helper: convert wstring to lowercase ASCII string
+static std::string WstrToLowerAscii(const std::wstring& wstr) {
+    std::string s;
+    s.resize(wstr.length());
+    std::transform(wstr.begin(), wstr.end(), s.begin(), [](wchar_t wc) {
+        return static_cast<char>(wc >= 0 && wc < 128 ? std::tolower(static_cast<int>(wc)) : '?');
+    });
+    return s;
+}
+
+// Blocked audio device keywords (BT, HDMI, virtual cables, remote audio)
+static const std::vector<std::string> kBlockedAudioKeywords = {
+    "bluetooth", "hands-free", "hdmi", "displayport",
+    "nvidia", "intel(r) display", "amd high definition",
+    "virtual", "cable", "obs", "stream",
+    "stereo mix", "wave out", "screenaudio",
+    "capture", "remote", "rdp"
+};
+
+// Check if a device name contains any blocked keyword
+static bool IsBlockedByName(const std::string& name) {
+    for (const auto& kw : kBlockedAudioKeywords) {
+        if (name.find(kw) != std::string::npos) return true;
+    }
+    return false;
+}
+
+// Use IKsJackDescription to check if a headphone jack is PHYSICALLY inserted
+// Returns true if at least one jack on this endpoint reports IsConnected == TRUE
+static bool CheckJackPhysicalConnection(IMMDevice* pDevice) {
+    IDeviceTopology* pTopology = NULL;
+    HRESULT hr = pDevice->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, NULL, (void**)&pTopology);
+    if (FAILED(hr) || !pTopology) return false;
+
+    IConnector* pConnFrom = NULL;
+    hr = pTopology->GetConnector(0, &pConnFrom);
+    pTopology->Release();
+    if (FAILED(hr) || !pConnFrom) return false;
+
+    IConnector* pConnTo = NULL;
+    hr = pConnFrom->GetConnectedTo(&pConnTo);
+    pConnFrom->Release();
+    if (FAILED(hr) || !pConnTo) return false;
+
+    IPart* pPart = NULL;
+    hr = pConnTo->QueryInterface(__uuidof(IPart), (void**)&pPart);
+    pConnTo->Release();
+    if (FAILED(hr) || !pPart) return false;
+
+    // Try IKsJackDescription2 first (has IsConnected field per jack)
+    bool isConnected = false;
+    IKsJackDescription2* pJackDesc2 = NULL;
+    hr = pPart->Activate(CLSCTX_INPROC_SERVER, __uuidof(IKsJackDescription2), (void**)&pJackDesc2);
+    if (SUCCEEDED(hr) && pJackDesc2) {
+        UINT jackCount = 0;
+        pJackDesc2->GetJackCount(&jackCount);
+        for (UINT j = 0; j < jackCount; j++) {
+            KSJACK_DESCRIPTION2 desc2 = {};
+            if (SUCCEEDED(pJackDesc2->GetJackDescription2(j, &desc2))) {
+                if (desc2.JackPresenceDetectionCapability != JACKDESC2_PRESENCE_DETECT_CAPABILITY_NONE &&
+                    (desc2.JackPresenceDetectionState & JACKDESC2_PRESENCE_DETECT_SET)) {
+                    isConnected = true;
+                    break;
+                }
+            }
+        }
+        pJackDesc2->Release();
+    } else {
+        // Fall back to IKsJackDescription (older, no per-jack IsConnected but still useful)
+        IKsJackDescription* pJackDesc = NULL;
+        hr = pPart->Activate(CLSCTX_INPROC_SERVER, __uuidof(IKsJackDescription), (void**)&pJackDesc);
+        if (SUCCEEDED(hr) && pJackDesc) {
+            UINT jackCount = 0;
+            pJackDesc->GetJackCount(&jackCount);
+            // If driver exposes jacks but doesn't support detection, we allow it
+            // (Realtek usually supports IKsJackDescription2, so this is a safe fallback)
+            isConnected = (jackCount > 0);
+            pJackDesc->Release();
+        } else {
+            // Device topology exists but no jack description - conservative allow
+            isConnected = true;
+        }
+    }
+
+    pPart->Release();
+    return isConnected;
+}
+
 bool IsWiredHeadsetConnected() {
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     bool shouldUninitialize = SUCCEEDED(hr);
 
     IMMDeviceEnumerator* pEnumerator = NULL;
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, 
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
                           __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (FAILED(hr)) {
+    if (FAILED(hr) || !pEnumerator) {
         if (shouldUninitialize) CoUninitialize();
         return false;
     }
 
-    IMMDevice* pDevice = NULL;
-    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-    if (FAILED(hr)) {
-        pEnumerator->Release();
+    // Enumerate ALL active render endpoints (not just default)
+    IMMDeviceCollection* pCollection = NULL;
+    hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
+    pEnumerator->Release();
+    if (FAILED(hr) || !pCollection) {
         if (shouldUninitialize) CoUninitialize();
         return false;
     }
 
-    IPropertyStore* pProps = NULL;
-    hr = pDevice->OpenPropertyStore(STGM_READ, &pProps);
-    if (FAILED(hr)) {
-        pDevice->Release();
-        pEnumerator->Release();
-        if (shouldUninitialize) CoUninitialize();
-        return false;
-    }
+    UINT count = 0;
+    pCollection->GetCount(&count);
 
-    PROPVARIANT varFormFactor;
-    PropVariantInit(&varFormFactor);
-    
-    hr = pProps->GetValue(PKEY_AudioEndpoint_FormFactor, &varFormFactor);
-    bool isWiredHeadphone = false;
-    
-    if (SUCCEEDED(hr)) {
-        UINT formFactor = varFormFactor.uintVal;
-        // Allow Speakers (1), Headphones (3), or Headset (5)
-        if (formFactor == 1 || formFactor == 3 || formFactor == 5) {
-            bool isBlockedAudioDevice = false;
+    bool foundWiredHeadset = false;
 
-            // 1. Check friendly name for blocked keywords (bluetooth, hdmi, virtual cards, remote desktops)
-            PROPVARIANT varFriendlyName;
-            PropVariantInit(&varFriendlyName);
-            HRESULT hrName = pProps->GetValue(PKEY_Device_FriendlyName, &varFriendlyName);
-            if (SUCCEEDED(hrName) && varFriendlyName.pwszVal != NULL) {
-                std::wstring wname(varFriendlyName.pwszVal);
-                std::string name = "";
-                name.resize(wname.length());
-                std::transform(wname.begin(), wname.end(), name.begin(),
-                    [](wchar_t wc) {
-                        return static_cast<char>(wc >= 0 && wc < 128 ? std::tolower(static_cast<int>(wc)) : '?');
-                    });
-                PropVariantClear(&varFriendlyName);
+    for (UINT i = 0; i < count && !foundWiredHeadset; i++) {
+        IMMDevice* pDevice = NULL;
+        if (FAILED(pCollection->Item(i, &pDevice)) || !pDevice) continue;
 
-                std::vector<std::string> blockedKeywords = {
-                    "bluetooth", "hands-free", "hdmi", "displayport", "nvidia", 
-                    "intel(r) display", "amd high definition", "virtual", "cable", 
-                    "obs", "stream", "mix", "stereo mix", "wave out", "screenaudio", 
-                    "line", "capture", "remote", "rdp"
-                };
+        IPropertyStore* pProps = NULL;
+        if (SUCCEEDED(pDevice->OpenPropertyStore(STGM_READ, &pProps)) && pProps) {
 
-                for (const auto& keyword : blockedKeywords) {
-                    if (name.find(keyword) != std::string::npos) {
-                        isBlockedAudioDevice = true;
-                        break;
+            // Check form factor
+            PROPVARIANT varFF;
+            PropVariantInit(&varFF);
+            bool okFormFactor = false;
+            if (SUCCEEDED(pProps->GetValue(PKEY_AudioEndpoint_FormFactor, &varFF))) {
+                UINT ff = varFF.uintVal;
+                // 1=Speakers, 3=Headphones, 5=Headset
+                okFormFactor = (ff == 1 || ff == 3 || ff == 5);
+                PropVariantClear(&varFF);
+            }
+
+            if (okFormFactor) {
+                // Check friendly name not blocked
+                bool blocked = false;
+                PROPVARIANT varName;
+                PropVariantInit(&varName);
+                if (SUCCEEDED(pProps->GetValue(PKEY_Device_FriendlyName, &varName)) && varName.pwszVal) {
+                    std::string name = WstrToLowerAscii(varName.pwszVal);
+                    blocked = IsBlockedByName(name);
+                    PropVariantClear(&varName);
+                }
+
+                // Check enumerator name not bluetooth
+                if (!blocked) {
+                    PROPVARIANT varEnum;
+                    PropVariantInit(&varEnum);
+                    if (SUCCEEDED(pProps->GetValue(PKEY_Device_EnumeratorName, &varEnum)) && varEnum.pwszVal) {
+                        std::string enumName = WstrToLowerAscii(varEnum.pwszVal);
+                        if (enumName.find("bthenum") != std::string::npos) blocked = true;
+                        PropVariantClear(&varEnum);
                     }
                 }
-            }
 
-            // 2. Check enumerator name (bus type) for bluetooth (bthenum)
-            PROPVARIANT varEnumName;
-            PropVariantInit(&varEnumName);
-            HRESULT hrEnum = pProps->GetValue(PKEY_Device_EnumeratorName, &varEnumName);
-            if (SUCCEEDED(hrEnum) && varEnumName.pwszVal != NULL) {
-                std::wstring wEnumName(varEnumName.pwszVal);
-                std::string enumName = "";
-                enumName.resize(wEnumName.length());
-                std::transform(wEnumName.begin(), wEnumName.end(), enumName.begin(),
-                    [](wchar_t wc) {
-                        return static_cast<char>(wc >= 0 && wc < 128 ? std::tolower(static_cast<int>(wc)) : '?');
-                    });
-                PropVariantClear(&varEnumName);
-
-                if (enumName.find("bthenum") != std::string::npos) {
-                    isBlockedAudioDevice = true;
+                if (!blocked) {
+                    // Use IKsJackDescription2 to check PHYSICAL jack insertion
+                    foundWiredHeadset = CheckJackPhysicalConnection(pDevice);
                 }
             }
 
-            if (!isBlockedAudioDevice) {
-                isWiredHeadphone = true;
-            }
+            pProps->Release();
         }
+        pDevice->Release();
     }
-    
-    PropVariantClear(&varFormFactor);
-    pProps->Release();
-    pDevice->Release();
-    pEnumerator->Release();
-    
-    if (shouldUninitialize) {
-        CoUninitialize();
-    }
-    return isWiredHeadphone;
+
+    pCollection->Release();
+    if (shouldUninitialize) CoUninitialize();
+    return foundWiredHeadset;
 }
 
 bool IsBlacklistedProcessRunning() {
