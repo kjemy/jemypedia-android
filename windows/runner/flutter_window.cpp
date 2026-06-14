@@ -60,57 +60,14 @@ static bool IsBlockedByName(const std::string& name) {
     return false;
 }
 
-// Use IKsJackDescription to physically detect if a headphone is plugged in.
-// KSJACK_DESCRIPTION.IsConnected is TRUE when the jack has a physical device plugged in.
-// This works reliably with Realtek and most modern HD Audio drivers.
-static bool CheckJackPhysicalConnection(IMMDevice* pDevice) {
-    IDeviceTopology* pTopology = NULL;
-    HRESULT hr = pDevice->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, NULL, (void**)&pTopology);
-    if (FAILED(hr) || !pTopology) {
-        // STRICT SECURITY: If we can't get topology, assume no physical headphone jack
-        return false;
-    }
-
-    IConnector* pConnFrom = NULL;
-    hr = pTopology->GetConnector(0, &pConnFrom);
-    pTopology->Release();
-    if (FAILED(hr) || !pConnFrom) return false;
-
-    IConnector* pConnTo = NULL;
-    hr = pConnFrom->GetConnectedTo(&pConnTo);
-    pConnFrom->Release();
-    if (FAILED(hr) || !pConnTo) return false;
-
-    IPart* pPart = NULL;
-    hr = pConnTo->QueryInterface(__uuidof(IPart), (void**)&pPart);
-    pConnTo->Release();
-    if (FAILED(hr) || !pPart) return false;
-
-    // Use IKsJackDescription - available in all Windows SDK versions
-    // KSJACK_DESCRIPTION.IsConnected = TRUE means device physically plugged in
-    bool isConnected = false;
-    IKsJackDescription* pJackDesc = NULL;
-    hr = pPart->Activate(CLSCTX_INPROC_SERVER, __uuidof(IKsJackDescription), (void**)&pJackDesc);
-    if (SUCCEEDED(hr) && pJackDesc) {
-        UINT jackCount = 0;
-        pJackDesc->GetJackCount(&jackCount);
-        for (UINT j = 0; j < jackCount; j++) {
-            KSJACK_DESCRIPTION desc = {};
-            if (SUCCEEDED(pJackDesc->GetJackDescription(j, &desc))) {
-                if (desc.IsConnected) {
-                    isConnected = true;
-                    break;
-                }
-            }
-        }
-        pJackDesc->Release();
-    } else {
-        // STRICT SECURITY: Driver does not support jack description API
-        isConnected = false;
-    }
-
-    pPart->Release();
-    return isConnected;
+// Check if an audio endpoint is strictly a wired headphone/headset output.
+// On Windows with Realtek/Intel HD Audio, when headphones are plugged in, 
+// a separate endpoint with FormFactor=3 (Headphones) or FormFactor=5 (Headset)
+// becomes active. When unplugged, only FormFactor=1 (Speakers) remains.
+// We NEVER accept Speakers (FormFactor=1) as proof of wired headphones.
+static bool IsStrictWiredHeadphoneEndpoint(UINT formFactor) {
+    // 3 = Headphones, 5 = Headset (NOT Speakers=1)
+    return (formFactor == 3 || formFactor == 5);
 }
 
 bool IsWiredHeadsetConnected() {
@@ -125,7 +82,7 @@ bool IsWiredHeadsetConnected() {
         return false;
     }
 
-    // Enumerate ALL active render endpoints (not just default)
+    // Enumerate ALL active render endpoints
     IMMDeviceCollection* pCollection = NULL;
     hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
     pEnumerator->Release();
@@ -146,20 +103,20 @@ bool IsWiredHeadsetConnected() {
         IPropertyStore* pProps = NULL;
         if (SUCCEEDED(pDevice->OpenPropertyStore(STGM_READ, &pProps)) && pProps) {
 
-            // Check form factor
+            // STRICT: Only accept FormFactor = Headphones(3) or Headset(5)
+            // NEVER accept Speakers(1) - speakers are ALWAYS active even with no headphone
             PROPVARIANT varFF;
             PropVariantInit(&varFF);
-            bool okFormFactor = false;
+            bool isHeadphoneEndpoint = false;
             if (SUCCEEDED(pProps->GetValue(PKEY_AudioEndpoint_FormFactor, &varFF))) {
-                UINT ff = varFF.uintVal;
-                // 1=Speakers, 3=Headphones, 5=Headset
-                okFormFactor = (ff == 1 || ff == 3 || ff == 5);
+                isHeadphoneEndpoint = IsStrictWiredHeadphoneEndpoint(varFF.uintVal);
                 PropVariantClear(&varFF);
             }
 
-            if (okFormFactor) {
-                // Check friendly name not blocked
+            if (isHeadphoneEndpoint) {
+                // Verify it's not a blocked device (BT, HDMI, virtual, remote)
                 bool blocked = false;
+
                 PROPVARIANT varName;
                 PropVariantInit(&varName);
                 if (SUCCEEDED(pProps->GetValue(PKEY_Device_FriendlyName, &varName)) && varName.pwszVal) {
@@ -168,7 +125,6 @@ bool IsWiredHeadsetConnected() {
                     PropVariantClear(&varName);
                 }
 
-                // Check enumerator name not bluetooth
                 if (!blocked) {
                     PROPVARIANT varEnum;
                     PropVariantInit(&varEnum);
@@ -180,8 +136,9 @@ bool IsWiredHeadsetConnected() {
                 }
 
                 if (!blocked) {
-                    // Use IKsJackDescription2 to check PHYSICAL jack insertion
-                    foundWiredHeadset = CheckJackPhysicalConnection(pDevice);
+                    // An active, non-blocked Headphones/Headset endpoint found!
+                    // On Realtek: this endpoint only exists when headphone is physically plugged in
+                    foundWiredHeadset = true;
                 }
             }
 
