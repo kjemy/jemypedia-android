@@ -158,6 +158,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
         _isSecurityDialogShowing = true;
 
         String fullWarning = 'لضمان استمرار عمل التطبيق، يُرجى القيام بما يلي:\n\n'
+            '• تأكد من توصيل سماعات الأذن السلكية\n'
             '• إيقاف تشغيل البلوتوث\n'
             '• إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية\n'
             '• إيقاف أي برنامج لتسجيل الشاشة أو الصوت\n'
