@@ -69,10 +69,11 @@ bool IsWiredHeadsetConnected() {
     
     if (SUCCEEDED(hr)) {
         UINT formFactor = varFormFactor.uintVal;
-        if (formFactor == 3 || formFactor == 5) { // Headphones or Headset
-            bool isBluetoothDevice = false;
+        // Allow Speakers (1), Headphones (3), or Headset (5)
+        if (formFactor == 1 || formFactor == 3 || formFactor == 5) {
+            bool isBlockedAudioDevice = false;
 
-            // 1. Check friendly name for bluetooth
+            // 1. Check friendly name for blocked keywords (bluetooth, hdmi, virtual cards, remote desktops)
             PROPVARIANT varFriendlyName;
             PropVariantInit(&varFriendlyName);
             HRESULT hrName = pProps->GetValue(PKEY_Device_FriendlyName, &varFriendlyName);
@@ -86,8 +87,18 @@ bool IsWiredHeadsetConnected() {
                     });
                 PropVariantClear(&varFriendlyName);
 
-                if (name.find("bluetooth") != std::string::npos || name.find("hands-free") != std::string::npos) {
-                    isBluetoothDevice = true;
+                std::vector<std::string> blockedKeywords = {
+                    "bluetooth", "hands-free", "hdmi", "displayport", "nvidia", 
+                    "intel(r) display", "amd high definition", "virtual", "cable", 
+                    "obs", "stream", "mix", "stereo mix", "wave out", "screenaudio", 
+                    "line", "capture", "remote", "rdp"
+                };
+
+                for (const auto& keyword : blockedKeywords) {
+                    if (name.find(keyword) != std::string::npos) {
+                        isBlockedAudioDevice = true;
+                        break;
+                    }
                 }
             }
 
@@ -106,11 +117,11 @@ bool IsWiredHeadsetConnected() {
                 PropVariantClear(&varEnumName);
 
                 if (enumName.find("bthenum") != std::string::npos) {
-                    isBluetoothDevice = true;
+                    isBlockedAudioDevice = true;
                 }
             }
 
-            if (!isBluetoothDevice) {
+            if (!isBlockedAudioDevice) {
                 isWiredHeadphone = true;
             }
         }
