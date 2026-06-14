@@ -70,18 +70,47 @@ bool IsWiredHeadsetConnected() {
     if (SUCCEEDED(hr)) {
         UINT formFactor = varFormFactor.uintVal;
         if (formFactor == 3 || formFactor == 5) { // Headphones or Headset
+            bool isBluetoothDevice = false;
+
+            // 1. Check friendly name for bluetooth
             PROPVARIANT varFriendlyName;
             PropVariantInit(&varFriendlyName);
-            hr = pProps->GetValue(PKEY_Device_FriendlyName, &varFriendlyName);
-            std::string name = "";
-            if (SUCCEEDED(hr) && varFriendlyName.pwszVal != NULL) {
+            HRESULT hrName = pProps->GetValue(PKEY_Device_FriendlyName, &varFriendlyName);
+            if (SUCCEEDED(hrName) && varFriendlyName.pwszVal != NULL) {
                 std::wstring wname(varFriendlyName.pwszVal);
-                name = std::string(wname.begin(), wname.end());
-                std::transform(name.begin(), name.end(), name.begin(),
-                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                std::string name = "";
+                name.resize(wname.length());
+                std::transform(wname.begin(), wname.end(), name.begin(),
+                    [](wchar_t wc) {
+                        return static_cast<char>(wc >= 0 && wc < 128 ? std::tolower(static_cast<int>(wc)) : '?');
+                    });
                 PropVariantClear(&varFriendlyName);
+
+                if (name.find("bluetooth") != std::string::npos || name.find("hands-free") != std::string::npos) {
+                    isBluetoothDevice = true;
+                }
             }
-            if (name.find("bluetooth") == std::string::npos && name.find("hands-free") == std::string::npos) {
+
+            // 2. Check enumerator name (bus type) for bluetooth (bthenum)
+            PROPVARIANT varEnumName;
+            PropVariantInit(&varEnumName);
+            HRESULT hrEnum = pProps->GetValue(PKEY_Device_EnumeratorName, &varEnumName);
+            if (SUCCEEDED(hrEnum) && varEnumName.pwszVal != NULL) {
+                std::wstring wEnumName(varEnumName.pwszVal);
+                std::string enumName = "";
+                enumName.resize(wEnumName.length());
+                std::transform(wEnumName.begin(), wEnumName.end(), enumName.begin(),
+                    [](wchar_t wc) {
+                        return static_cast<char>(wc >= 0 && wc < 128 ? std::tolower(static_cast<int>(wc)) : '?');
+                    });
+                PropVariantClear(&varEnumName);
+
+                if (enumName.find("bthenum") != std::string::npos) {
+                    isBluetoothDevice = true;
+                }
+            }
+
+            if (!isBluetoothDevice) {
                 isWiredHeadphone = true;
             }
         }
