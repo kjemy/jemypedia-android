@@ -13,6 +13,90 @@
 #include <psapi.h>
 #include <algorithm>
 #include <string>
+#include <initguid.h>
+#include <mmdeviceapi.h>
+#include <functiondiscoverykeys_devpkey.h>
+#include <bluetoothapis.h>
+
+#pragma comment(lib, "Bthprops.lib")
+
+bool IsBluetoothRadioEnabled() {
+    BLUETOOTH_FIND_RADIO_PARAMS params = { sizeof(BLUETOOTH_FIND_RADIO_PARAMS) };
+    HANDLE hRadio = NULL;
+    HBLUETOOTH_RADIO_FIND hFind = BluetoothFindFirstRadio(&params, &hRadio);
+    if (hFind != NULL) {
+        CloseHandle(hRadio);
+        BluetoothFindRadioClose(hFind);
+        return true;
+    }
+    return false;
+}
+
+bool IsWiredHeadsetConnected() {
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    bool shouldUninitialize = SUCCEEDED(hr);
+
+    IMMDeviceEnumerator* pEnumerator = NULL;
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, 
+                          __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (FAILED(hr)) {
+        if (shouldUninitialize) CoUninitialize();
+        return false;
+    }
+
+    IMMDevice* pDevice = NULL;
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    if (FAILED(hr)) {
+        pEnumerator->Release();
+        if (shouldUninitialize) CoUninitialize();
+        return false;
+    }
+
+    IPropertyStore* pProps = NULL;
+    hr = pDevice->OpenPropertyStore(STGM_READ, &pProps);
+    if (FAILED(hr)) {
+        pDevice->Release();
+        pEnumerator->Release();
+        if (shouldUninitialize) CoUninitialize();
+        return false;
+    }
+
+    PROPVARIANT varFormFactor;
+    PropVariantInit(&varFormFactor);
+    
+    hr = pProps->GetValue(PKEY_AudioEndpoint_FormFactor, &varFormFactor);
+    bool isWiredHeadphone = false;
+    
+    if (SUCCEEDED(hr)) {
+        UINT formFactor = varFormFactor.uintVal;
+        if (formFactor == 3 || formFactor == 5) { // Headphones or Headset
+            PROPVARIANT varFriendlyName;
+            PropVariantInit(&varFriendlyName);
+            hr = pProps->GetValue(PKEY_Device_FriendlyName, &varFriendlyName);
+            std::string name = "";
+            if (SUCCEEDED(hr) && varFriendlyName.pwszVal != NULL) {
+                std::wstring wname(varFriendlyName.pwszVal);
+                name = std::string(wname.begin(), wname.end());
+                std::transform(name.begin(), name.end(), name.begin(),
+                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                PropVariantClear(&varFriendlyName);
+            }
+            if (name.find("bluetooth") == std::string::npos && name.find("hands-free") == std::string::npos) {
+                isWiredHeadphone = true;
+            }
+        }
+    }
+    
+    PropVariantClear(&varFormFactor);
+    pProps->Release();
+    pDevice->Release();
+    pEnumerator->Release();
+    
+    if (shouldUninitialize) {
+        CoUninitialize();
+    }
+    return isWiredHeadphone;
+}
 
 bool IsBlacklistedProcessRunning() {
     DWORD aProcesses[1024], cbNeeded, cProcesses;
@@ -168,6 +252,10 @@ bool FlutterWindow::OnCreate() {
           result->Success(flutter::EncodableValue(IsDebuggerAttached()));
         } else if (call.method_name() == "isBlacklistedProcessRunning") {
           result->Success(flutter::EncodableValue(IsBlacklistedProcessRunning()));
+        } else if (call.method_name() == "isBluetoothEnabled") {
+          result->Success(flutter::EncodableValue(IsBluetoothRadioEnabled()));
+        } else if (call.method_name() == "isWiredHeadsetOn") {
+          result->Success(flutter::EncodableValue(IsWiredHeadsetConnected()));
         } else {
           result->NotImplemented();
         }
