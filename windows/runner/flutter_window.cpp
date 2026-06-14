@@ -10,6 +10,53 @@
 // Returns the number of PHYSICALLY connected display outputs (works in clone/extend/single modes)
 // Uses CCD (Connected Configuration Displays) API which is more reliable than EnumDisplayMonitors
 // EnumDisplayMonitors only counts LOGICAL monitors and misses clone mode entirely
+#include <psapi.h>
+#include <algorithm>
+#include <string>
+
+bool IsBlacklistedProcessRunning() {
+    DWORD aProcesses[1024], cbNeeded, cProcesses;
+    unsigned int i;
+
+    if (!EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded)) {
+        return false;
+    }
+
+    cProcesses = cbNeeded / sizeof(DWORD);
+    std::vector<std::string> blacklist = {
+        "obs64.exe", "obs32.exe", 
+        "audacity.exe", "audition.exe",
+        "camtasia.exe", "camrecorder.exe",
+        "bandicam.exe", "action.exe",
+        "fraps.exe", "xsplit.core.exe",
+        "soundforge.exe", "reaper.exe"
+    };
+
+    for (i = 0; i < cProcesses; i++) {
+        if (aProcesses[i] != 0) {
+            char szProcessName[MAX_PATH] = "<unknown>";
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, aProcesses[i]);
+            if (NULL != hProcess) {
+                HMODULE hMod;
+                DWORD cbNeeded;
+                if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
+                    GetModuleBaseNameA(hProcess, hMod, szProcessName, sizeof(szProcessName));
+                    std::string processName(szProcessName);
+                    std::transform(processName.begin(), processName.end(), processName.begin(), ::tolower);
+                    for (const auto& banned : blacklist) {
+                        if (processName == banned) {
+                            CloseHandle(hProcess);
+                            return true;
+                        }
+                    }
+                }
+                CloseHandle(hProcess);
+            }
+        }
+    }
+    return false;
+}
+
 int GetPhysicalDisplayCount() {
     UINT32 pathCount = 0;
     UINT32 modeCount = 0;
@@ -118,6 +165,8 @@ bool FlutterWindow::OnCreate() {
           result->Success(flutter::EncodableValue(IsVirtualMachine()));
         } else if (call.method_name() == "isDebuggerConnected") {
           result->Success(flutter::EncodableValue(IsDebuggerAttached()));
+        } else if (call.method_name() == "isBlacklistedProcessRunning") {
+          result->Success(flutter::EncodableValue(IsBlacklistedProcessRunning()));
         } else {
           result->NotImplemented();
         }

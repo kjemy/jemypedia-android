@@ -37,6 +37,12 @@ class MainActivity: FlutterActivity() {
                 "isDebuggerConnected" -> {
                     result.success(isDebuggerAttached())
                 }
+                "isBluetoothEnabled" -> {
+                    result.success(isBluetoothEnabled())
+                }
+                "isWiredHeadsetOn" -> {
+                    result.success(isWiredHeadsetOn())
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -85,6 +91,24 @@ class MainActivity: FlutterActivity() {
 
     private fun isDebuggerAttached(): Boolean {
         return android.os.Debug.isDebuggerConnected() || android.os.Debug.waitingForDebugger()
+    }
+
+    private fun isBluetoothEnabled(): Boolean {
+        try {
+            val bluetoothAdapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+            return bluetoothAdapter?.isEnabled == true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    private fun isWiredHeadsetOn(): Boolean {
+        try {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            return audioManager.isWiredHeadsetOn
+        } catch (e: Exception) {
+            return true 
+        }
     }
 }
 

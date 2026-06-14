@@ -11,18 +11,27 @@ class SecurityService extends ChangeNotifier {
   bool _isEmulator = false;
   bool _isDebuggerConnected = false;
   final bool _isScreenRecording = false; // Placeholder for future Android 14 callback
+  bool _isBluetoothEnabled = false;
+  bool _isWiredHeadsetOn = true;
+  bool _isBlacklistedProcessRunning = false;
 
   bool get isSecurityCompromised => 
       _isExternalDisplayConnected || 
       _isScreenRecording || 
       _isRooted || 
       _isEmulator || 
-      _isDebuggerConnected;
+      _isDebuggerConnected ||
+      _isBluetoothEnabled ||
+      !_isWiredHeadsetOn ||
+      _isBlacklistedProcessRunning;
 
   bool get isExternalDisplayConnected => _isExternalDisplayConnected;
   bool get isRooted => _isRooted;
   bool get isEmulator => _isEmulator;
   bool get isDebuggerConnected => _isDebuggerConnected;
+  bool get isBluetoothEnabled => _isBluetoothEnabled;
+  bool get isWiredHeadsetOn => _isWiredHeadsetOn;
+  bool get isBlacklistedProcessRunning => _isBlacklistedProcessRunning;
 
   Timer? _pollingTimer;
 
@@ -57,6 +66,15 @@ class SecurityService extends ChangeNotifier {
 
       final bool hasDebugger = debuggerPlatform || debuggerNative;
 
+      bool bluetooth = false;
+      try { bluetooth = await _channel.invokeMethod('isBluetoothEnabled') ?? false; } catch (_) {}
+      
+      bool wiredHeadset = true;
+      try { wiredHeadset = await _channel.invokeMethod('isWiredHeadsetOn') ?? true; } catch (_) {}
+      
+      bool blacklistedProcess = false;
+      try { blacklistedProcess = await _channel.invokeMethod('isBlacklistedProcessRunning') ?? false; } catch (_) {}
+
       bool changed = false;
       if (_isExternalDisplayConnected != displaysConnected) {
         _isExternalDisplayConnected = displaysConnected;
@@ -72,6 +90,18 @@ class SecurityService extends ChangeNotifier {
       }
       if (_isDebuggerConnected != hasDebugger) {
         _isDebuggerConnected = hasDebugger;
+        changed = true;
+      }
+      if (_isBluetoothEnabled != bluetooth) {
+        _isBluetoothEnabled = bluetooth;
+        changed = true;
+      }
+      if (_isWiredHeadsetOn != wiredHeadset) {
+        _isWiredHeadsetOn = wiredHeadset;
+        changed = true;
+      }
+      if (_isBlacklistedProcessRunning != blacklistedProcess) {
+        _isBlacklistedProcessRunning = blacklistedProcess;
         changed = true;
       }
 

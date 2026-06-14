@@ -149,9 +149,71 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   }
 
 
-  void _onSecurityChanged() {
+  bool _isSecurityDialogShowing = false;
+
+  void _onSecurityChanged() async {
     if (_securityService.isSecurityCompromised) {
       _player.pause();
+      if (!_isSecurityDialogShowing && mounted) {
+        _isSecurityDialogShowing = true;
+        
+        String reason = 'تم اكتشاف تهديد أمني.';
+        if (_securityService.isBlacklistedProcessRunning || _securityService.isDebuggerConnected) {
+           reason = 'تم اكتشاف برنامج تسجيل شاشة أو صوت أو مصحح أخطاء. يرجى إغلاقه فوراً.';
+        } else if (_securityService.isBluetoothEnabled) {
+           reason = 'يرجى إغلاق البلوتوث وتوصيل سماعة سلكية لتشغيل الفيديو.';
+        } else if (!_securityService.isWiredHeadsetOn) {
+           reason = 'برجاء توصيل سماعة أذن سلكية (Wired Headphone) لتشغيل الصوت.';
+        } else if (_securityService.isExternalDisplayConnected) {
+           reason = 'تم اكتشاف شاشة خارجية أو بث. يرجى فصله لتشغيل الفيديو.';
+        }
+
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              backgroundColor: const Color(0xFF1E2030),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.security, color: Colors.red, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'تنبيه أمني صارم',
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              content: Text(
+                '$reason\n\nلن تتمكن من استكمال المشاهدة حتى يتم حل هذه المشكلة.',
+                style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+                textAlign: TextAlign.right,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                  },
+                  child: const Text(
+                    'خروج من الدرس',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        _isSecurityDialogShowing = false;
+        
+        if (_securityService.isSecurityCompromised && mounted) {
+           Navigator.of(context).pop();
+        }
+      }
     }
   }
 

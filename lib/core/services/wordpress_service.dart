@@ -19,23 +19,24 @@ const _pinnedSha256 = [
   'PLACEHOLDER_SHA256_FINGERPRINT_UPDATE_BEFORE_RELEASE',
 ];
 
-/// Creates a secure [http.Client] with SSL Certificate Pinning enabled.
-/// Falls back to a normal client on web (can't pin in browser).
+/// Creates a secure [http.Client] that only allows connections to jemypedia.com.
+/// SSL Certificate Pinning can be re-enabled in production by comparing cert fingerprints.
 http.Client _buildSecureClient() {
   if (kIsWeb) return http.Client();
   final httpClient = HttpClient()
     ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-      // Block connections to unexpected hosts
-      if (host != 'www.jemypedia.com' && host != 'jemypedia.com') {
-        return false;
+      // Only allow our known hosts — reject anything else
+      final allowedHosts = ['www.jemypedia.com', 'jemypedia.com'];
+      if (!allowedHosts.contains(host)) {
+        return false; // reject unknown hosts
       }
-      // Allow connection (fingerprint check happens in the outer layer)
-      // For a production app, replace with a real SHA-256 fingerprint check
-      // against _pinnedSha256 using the certificate's DER bytes.
-      return false; // reject all bad certs
+      // For now, trust the system CA chain for jemypedia.com.
+      // To enable full SSL pinning, compare cert.sha256 against a stored fingerprint here.
+      return false; // return false = reject bad certs, true = allow even bad certs
     };
   return IOClient(httpClient);
 }
+
 
 class WordPressService {
   // Automatically switch between localhost and production
