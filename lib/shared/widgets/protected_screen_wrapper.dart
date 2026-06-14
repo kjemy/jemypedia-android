@@ -7,74 +7,153 @@ class ProtectedScreenWrapper extends StatelessWidget {
 
   const ProtectedScreenWrapper({super.key, required this.child});
 
-  String _getBreachTitle(SecurityService s) {
-    if (s.isRooted) return 'جهاز مخترق (Rooted Device)';
-    if (s.isEmulator) return 'بيئة وهمية (Emulator/VM)';
-    if (s.isDebuggerConnected) return 'محاولة تفكيك (Debugger Detected)';
-    if (s.isExternalDisplayConnected) return 'شاشة خارجية (External Display)';
-    return 'تهديد أمني مكتشف';
-  }
-
-  String _getBreachMessage(SecurityService s) {
-    if (s.isRooted) {
-      return 'تم اكتشاف أن جهازك مفتوح الصلاحيات (Rooted/Jailbroken). لا يمكن تشغيل التطبيق على أجهزة مخترقة لحماية المحتوى المدفوع.';
-    }
-    if (s.isEmulator) {
-      return 'تم اكتشاف تشغيل التطبيق داخل محاكي أو بيئة وهمية (Emulator/VM/BlueStacks). هذا السلوك محظور.';
-    }
-    if (s.isDebuggerConnected) {
-      return 'تم اكتشاف محاولة فحص أو تفكيك التطبيق عبر برنامج Debugger. تم إيقاف التطبيق حمايةً للمحتوى وحقوق الملكية الفكرية.';
-    }
-    if (s.isExternalDisplayConnected) {
-      return 'تم اكتشاف توصيل شاشة خارجية أو مشاركة الشاشة (HDMI/Mirroring). يرجى الفصل للمتابعة.';
-    }
-    return 'تم اكتشاف تهديد أمني غير معروف.';
-  }
-
   @override
   Widget build(BuildContext context) {
+    const bloodyRed = Color(0xFF8A0303);
+    const darkBackground = Color(0xFF0F0F14);
+
     return Consumer<SecurityService>(
       builder: (context, securityService, _) {
         if (securityService.isSecurityCompromised) {
           return Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.security_update_warning, color: Colors.redAccent, size: 80),
-                    const SizedBox(height: 20),
-                    Text(
-                      _getBreachTitle(securityService),
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
-                      style: const TextStyle(
-                        color: Colors.redAccent,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      _getBreachMessage(securityService),
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15,
-                        height: 1.6,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      'عدم الالتزام بشروط الاستخدام يعرضك للمساءلة القانونية.\nجميع الحقوق محفوظة © Jemypedia 2026',
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
-                      style: TextStyle(color: Colors.white30, fontSize: 12, height: 1.5),
-                    ),
+            backgroundColor: darkBackground,
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkBackground,
+                    Color(0xFF220A0A),
                   ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 40.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: bloodyRed.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: bloodyRed.withOpacity(0.3), width: 1.5),
+                          ),
+                          child: const Icon(
+                            Icons.gavel_rounded,
+                            color: bloodyRed,
+                            size: 72,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'تم اكتشاف اشتباه في تحايل على التطبيق',
+                          textAlign: TextAlign.center,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(
+                            color: bloodyRed,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E24),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'لضمان استمرار عمل التطبيق، يُرجى القيام بما يلي:',
+                                textDirection: TextDirection.rtl,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ...[
+                                'إيقاف تشغيل البلوتوث',
+                                'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
+                                'إيقاف أي برنامج لتسجيل الشاشة أو الصوت',
+                                'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق',
+                              ].map((item) => Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: Row(
+                                      textDirection: TextDirection.rtl,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          '• ',
+                                          style: TextStyle(color: bloodyRed, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            item,
+                                            textDirection: TextDirection.rtl,
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 14,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
+                              const SizedBox(height: 20),
+                              const Divider(color: Colors.white10),
+                              const SizedBox(height: 12),
+                              Row(
+                                textDirection: TextDirection.rtl,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.warning_rounded, color: bloodyRed.withOpacity(0.8), size: 20),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      'تنبيه قانوني:\nأي محاولة للتحايل على هذا التطبيق أو انتهاك حقوق المحتوى، بأي شكل من الأشكال، تُعدّ جريمة يُعاقب عليها القانون. وقد تم تسجيل هذه المحاولة وحفظها.',
+                                      textDirection: TextDirection.rtl,
+                                      style: TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 13,
+                                        height: 1.6,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        const Text(
+                          'جميع الحقوق محفوظة © Jemypedia 2026',
+                          textAlign: TextAlign.center,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(color: Colors.white30, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

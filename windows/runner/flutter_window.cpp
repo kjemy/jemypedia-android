@@ -38,8 +38,8 @@ bool IsBlacklistedProcessRunning() {
             HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, aProcesses[i]);
             if (NULL != hProcess) {
                 HMODULE hMod;
-                DWORD cbNeeded;
-                if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
+                DWORD cbNeededMod;
+                if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeededMod)) {
                     GetModuleBaseNameA(hProcess, hMod, szProcessName, sizeof(szProcessName));
                     std::string processName(szProcessName);
                     std::transform(processName.begin(), processName.end(), processName.begin(), ::tolower);
