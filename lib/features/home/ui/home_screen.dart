@@ -175,14 +175,14 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Icon(Icons.cloud_off_rounded, size: 100, color: Colors.white24),
           const SizedBox(height: 20),
-          const Text('Failed to load courses', style: TextStyle(color: Colors.white70, fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('فشل تحميل البيانات', style: TextStyle(color: Colors.white70, fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          const Text('Check your internet or API connection', style: TextStyle(color: Colors.white30, fontSize: 14)),
+          const Text('تأكد من اتصالك بالإنترنت وجودة الشبكة', style: TextStyle(color: Colors.white30, fontSize: 14)),
           const SizedBox(height: 30),
           ElevatedButton.icon(
             onPressed: () => provider.fetchCourses(),
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Retry Loading Data'),
+            label: const Text('إعادة المحاولة'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accentNeon,
               foregroundColor: Colors.black,

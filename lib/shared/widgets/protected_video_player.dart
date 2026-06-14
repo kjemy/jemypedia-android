@@ -156,25 +156,15 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       _player.pause();
       if (!_isSecurityDialogShowing && mounted) {
         _isSecurityDialogShowing = true;
-        
-        String reason = 'تم اكتشاف محاولة تحايل.';
-        if (_securityService.isBlacklistedProcessRunning || _securityService.isDebuggerConnected || _securityService.isScreenRecording) {
-           reason = 'تم اكتشاف برنامج تسجيل شاشة أو صوت. يرجى إغلاقه فوراً.';
-        } else if (_securityService.isBluetoothEnabled) {
-           reason = 'من فضلك تأكد من إغلاق البلوتوث.';
-        } else if (!_securityService.isWiredHeadsetOn) {
-           reason = 'تأكد من توصيل سماعة الرأس (سلكية) لتشغيل الصوت.';
-        } else if (_securityService.isExternalDisplayConnected) {
-           reason = 'أغلق الكاست أو الميرور أو الشاشة الخارجية.';
-        }
 
-        String fullWarning = '$reason\n\n'
-            'التنبيهات:\n'
-            '• تأكد من إغلاق البلوتوث\n'
-            '• تأكد من توصيل سماعة الرأس\n'
-            '• اقفل الكاست، الميرور، وكل شيء مرتبط بشاشات خارجية\n'
-            '• أغلق برامج تسجيل الشاشة والصوت تماماً\n\n'
-            'أي محاولة للتحايل بأي شكل من الأشكال تُعرضك للمساءلة القانونية وتم تسجيل هذه المحاولة.';
+        String fullWarning = 'تم تسجيل محاولة تحايل.\n\n'
+            'لضمان استمرار عمل التطبيق، يرجى إغلاق:\n'
+            '• اتصال البلوتوث\n'
+            '• الكاست، الميرور، وأي ربط بشاشات خارجية\n'
+            '• برامج تسجيل الشاشة والصوت وأي أدوات أخرى متعارضة\n\n'
+            'تنبيه قانوني: أي محاولة للتحايل بأي شكل من الأشكال تُعرضك للمساءلة القانونية، وقد تم تسجيل هذه المحاولة.';
+
+        final bloodyRed = const Color(0xFF8A0303);
 
         await showDialog(
           context: context,
@@ -184,14 +174,14 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
             child: AlertDialog(
               backgroundColor: const Color(0xFF1E2030),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.security, color: Colors.red, size: 28),
-                  SizedBox(width: 12),
+                  Icon(Icons.warning_rounded, color: bloodyRed, size: 28),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'تنبيه أمني صارم',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      'تم تسجيل محاولة تحايل',
+                      style: TextStyle(color: bloodyRed, fontSize: 16, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.right,
                     ),
                   ),
@@ -207,9 +197,9 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                   onPressed: () {
                     Navigator.of(ctx).pop();
                   },
-                  child: const Text(
+                  child: Text(
                     'خروج من الدرس',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: bloodyRed, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
