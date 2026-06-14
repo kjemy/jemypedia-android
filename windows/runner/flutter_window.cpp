@@ -60,63 +60,53 @@ static bool IsBlockedByName(const std::string& name) {
     return false;
 }
 
-// Use IKsJackDescription to check if a headphone jack is PHYSICALLY inserted
-// Returns true if at least one jack on this endpoint reports IsConnected == TRUE
+// Use IKsJackDescription to physically detect if a headphone is plugged in.
+// KSJACK_DESCRIPTION.IsConnected is TRUE when the jack has a physical device plugged in.
+// This works reliably with Realtek and most modern HD Audio drivers.
 static bool CheckJackPhysicalConnection(IMMDevice* pDevice) {
     IDeviceTopology* pTopology = NULL;
     HRESULT hr = pDevice->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, NULL, (void**)&pTopology);
-    if (FAILED(hr) || !pTopology) return false;
+    if (FAILED(hr) || !pTopology) {
+        // Cannot get topology - conservatively allow (driver may not support it)
+        return true;
+    }
 
     IConnector* pConnFrom = NULL;
     hr = pTopology->GetConnector(0, &pConnFrom);
     pTopology->Release();
-    if (FAILED(hr) || !pConnFrom) return false;
+    if (FAILED(hr) || !pConnFrom) return true;
 
     IConnector* pConnTo = NULL;
     hr = pConnFrom->GetConnectedTo(&pConnTo);
     pConnFrom->Release();
-    if (FAILED(hr) || !pConnTo) return false;
+    if (FAILED(hr) || !pConnTo) return true;
 
     IPart* pPart = NULL;
     hr = pConnTo->QueryInterface(__uuidof(IPart), (void**)&pPart);
     pConnTo->Release();
-    if (FAILED(hr) || !pPart) return false;
+    if (FAILED(hr) || !pPart) return true;
 
-    // Try IKsJackDescription2 first (has IsConnected field per jack)
+    // Use IKsJackDescription - available in all Windows SDK versions
+    // KSJACK_DESCRIPTION.IsConnected = TRUE means device physically plugged in
     bool isConnected = false;
-    IKsJackDescription2* pJackDesc2 = NULL;
-    hr = pPart->Activate(CLSCTX_INPROC_SERVER, __uuidof(IKsJackDescription2), (void**)&pJackDesc2);
-    if (SUCCEEDED(hr) && pJackDesc2) {
+    IKsJackDescription* pJackDesc = NULL;
+    hr = pPart->Activate(CLSCTX_INPROC_SERVER, __uuidof(IKsJackDescription), (void**)&pJackDesc);
+    if (SUCCEEDED(hr) && pJackDesc) {
         UINT jackCount = 0;
-        pJackDesc2->GetJackCount(&jackCount);
+        pJackDesc->GetJackCount(&jackCount);
         for (UINT j = 0; j < jackCount; j++) {
-            KSJACK_DESCRIPTION2 desc2 = {};
-            if (SUCCEEDED(pJackDesc2->GetJackDescription2(j, &desc2))) {
-                // JackPresenceDetectionCapability != 0 means jack can detect plug presence
-                // JackPresenceDetectionState bit 1 means headphone is currently inserted
-                if (desc2.JackPresenceDetectionCapability != 0 &&
-                    (desc2.JackPresenceDetectionState & 0x1)) {
+            KSJACK_DESCRIPTION desc = {};
+            if (SUCCEEDED(pJackDesc->GetJackDescription(j, &desc))) {
+                if (desc.IsConnected) {
                     isConnected = true;
                     break;
                 }
             }
         }
-        pJackDesc2->Release();
+        pJackDesc->Release();
     } else {
-        // Fall back to IKsJackDescription (older, no per-jack IsConnected but still useful)
-        IKsJackDescription* pJackDesc = NULL;
-        hr = pPart->Activate(CLSCTX_INPROC_SERVER, __uuidof(IKsJackDescription), (void**)&pJackDesc);
-        if (SUCCEEDED(hr) && pJackDesc) {
-            UINT jackCount = 0;
-            pJackDesc->GetJackCount(&jackCount);
-            // If driver exposes jacks but doesn't support detection, we allow it
-            // (Realtek usually supports IKsJackDescription2, so this is a safe fallback)
-            isConnected = (jackCount > 0);
-            pJackDesc->Release();
-        } else {
-            // Device topology exists but no jack description - conservative allow
-            isConnected = true;
-        }
+        // Driver does not support jack description API - conservatively allow
+        isConnected = true;
     }
 
     pPart->Release();
