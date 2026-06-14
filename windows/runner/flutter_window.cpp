@@ -42,7 +42,8 @@ bool IsBlacklistedProcessRunning() {
                 if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeededMod)) {
                     GetModuleBaseNameA(hProcess, hMod, szProcessName, sizeof(szProcessName));
                     std::string processName(szProcessName);
-                    std::transform(processName.begin(), processName.end(), processName.begin(), ::tolower);
+                    std::transform(processName.begin(), processName.end(), processName.begin(),
+                        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
                     for (const auto& banned : blacklist) {
                         if (processName == banned) {
                             CloseHandle(hProcess);
