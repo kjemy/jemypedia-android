@@ -161,21 +161,33 @@ bool IsBlacklistedProcessRunning() {
     }
 
     cProcesses = cbNeeded / sizeof(DWORD);
+    // ONLY dedicated screen/audio recording tools — NOT communication apps or OS components
+    // Communication apps (Discord, Teams, Zoom, Skype) are excluded: they don't capture
+    // protected audio by default and their presence should NOT block legitimate users.
+    // Windows GameBar is also excluded as it is a system component that runs in the background.
     std::vector<std::string> blacklist = {
-        "obs64.exe", "obs32.exe", 
+        // Screen + audio recorders
+        "obs64.exe", "obs32.exe", "obs-browser-page.exe",
         "audacity.exe", "audition.exe",
-        "camtasia.exe", "camrecorder.exe",
-        "bandicam.exe", "action.exe",
-        "fraps.exe", "xsplit.core.exe",
-        "soundforge.exe", "reaper.exe",
-        "snippingtool.exe", "screenclippinghost.exe", "psr.exe",
-        "gamebar.exe", "gamebarftserver.exe", "gamepanel.exe", "gamebarpresencewriter.exe",
-        "sharex.exe", "lightshot.exe", "greenshot.exe", "loom.exe",
-        "zoom.exe", "teams.exe", "msteams.exe", "skype.exe",
-        "teamviewer.exe", "anydesk.exe", "discord.exe",
+        "camtasia.exe", "camrecorder.exe", "camtasiastudio.exe",
+        "bandicam.exe", "bdcam.exe",
+        "action.exe",          // Mirillis Action!
+        "fraps.exe",
+        "xsplit.core.exe", "xsplitbroadcaster.exe", "xsplitgamecaster.exe",
+        "soundforge.exe", "soundforgepro.exe",
+        "reaper.exe",
+        "sharex.exe",
         "snagit32.exe", "snagit64.exe", "snagiteditor.exe",
-        "filmora.exe", "icecreamscreenrecorder.exe", "tinytake.exe",
-        "nvsphelper64.exe", "nvidia share.exe"
+        "filmora.exe", "filmorascrn.exe",
+        "icecreamscreenrecorder.exe",
+        "tinytake.exe",
+        "loom.exe",
+        "apowerrec.exe", "apowersoft.exe",
+        "flashbackrecorder.exe",
+        "d3dgear.exe",
+        "dxtory.exe",
+        "playclaw.exe",
+        "nvsphelper64.exe"     // NVIDIA ShadowPlay helper
     };
 
     for (i = 0; i < cProcesses; i++) {

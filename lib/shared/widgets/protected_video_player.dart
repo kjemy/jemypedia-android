@@ -189,6 +189,16 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                 final checks = [
                   {
                     'text':
+                        'إيقاف الكاست، الميرور، وأي اتصال بشاشة HDMI خارجية',
+                    'isOk': !secService.isExternalDisplayConnected,
+                  },
+                  {
+                    'text':
+                        'إيقاف أي برنامج لتسجيل الشاشة أو الصوت (OBS, Bandicam, Audacity...)',
+                    'isOk': !secService.isBlacklistedProcessRunning,
+                  },
+                  {
+                    'text':
                         'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء)',
                     'isOk': !(secService.isRooted ||
                         secService.isEmulator ||

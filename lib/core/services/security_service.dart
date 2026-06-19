@@ -5,7 +5,7 @@ import 'native_security_service.dart';
 
 class SecurityService extends ChangeNotifier {
   static const MethodChannel _channel = MethodChannel('jemypedia/security');
-  
+
   bool _isExternalDisplayConnected = false;
   bool _isRooted = false;
   bool _isEmulator = false;
@@ -15,10 +15,16 @@ class SecurityService extends ChangeNotifier {
   bool _isWiredHeadsetOn = true;
   bool _isBlacklistedProcessRunning = false;
 
-  bool get isSecurityCompromised => 
-      _isRooted || 
-      _isEmulator || 
-      _isDebuggerConnected;
+  // Debounce: external display must be detected for 2 consecutive polls before triggering
+  int _externalDisplayConfirmCount = 0;
+  static const int _requiredConfirmCount = 2; // 2 × 5s = 10 seconds debounce
+
+  bool get isSecurityCompromised =>
+      _isExternalDisplayConnected ||
+      _isRooted ||
+      _isEmulator ||
+      _isDebuggerConnected ||
+      _isBlacklistedProcessRunning;
 
   bool get isExternalDisplayConnected => _isExternalDisplayConnected;
   bool get isRooted => _isRooted;
@@ -36,17 +42,31 @@ class SecurityService extends ChangeNotifier {
   }
 
   void _startPolling() {
-    // Poll every 3 seconds
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    // Poll every 5 seconds (slightly relaxed to reduce CPU load)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       await _checkSecurity();
     });
   }
 
   Future<void> _checkSecurity() async {
     try {
-      // 1. External Display Count
-      final int externalCount = await _channel.invokeMethod('getExternalDisplaysCount');
-      final bool displaysConnected = externalCount > 0;
+      // 1. External Display Count — with debounce to avoid transient virtual displays
+      int externalCount = 0;
+      try {
+        externalCount =
+            await _channel.invokeMethod('getExternalDisplaysCount') ?? 0;
+      } catch (_) {}
+
+      final bool rawDisplayDetected = externalCount > 0;
+      if (rawDisplayDetected) {
+        _externalDisplayConfirmCount++;
+      } else {
+        // Reset counter — display went away, no threat
+        _externalDisplayConfirmCount = 0;
+      }
+      // Only mark as external if detected consistently across multiple polls
+      final bool displaysConfirmed =
+          _externalDisplayConfirmCount >= _requiredConfirmCount;
 
       // 2. Root/Jailbreak Check
       final bool rooted = await _channel.invokeMethod('isRooted') ?? false;
@@ -55,28 +75,43 @@ class SecurityService extends ChangeNotifier {
       final bool emulator = await _channel.invokeMethod('isEmulator') ?? false;
 
       // 4. Platform Debugger Check
-      final bool debuggerPlatform = await _channel.invokeMethod('isDebuggerConnected') ?? false;
+      final bool debuggerPlatform =
+          await _channel.invokeMethod('isDebuggerConnected') ?? false;
 
-      // 5. C++ Native FFI Debugger Check
+      // 5. C++ Native FFI Debugger Check (Windows only — safe on Android too)
       final bool debuggerNative = NativeSecurityService.checkDebugger();
 
       final bool hasDebugger = debuggerPlatform || debuggerNative;
 
-      bool bluetooth = false;
-      try { bluetooth = await _channel.invokeMethod('isBluetoothEnabled') ?? false; } catch (_) {}
-      
-      bool wiredHeadset = true;
-      try { wiredHeadset = await _channel.invokeMethod('isWiredHeadsetOn') ?? true; } catch (_) {}
-      
+      // 6. Screen-recording / blacklisted process (OBS, Bandicam, Audacity, etc.)
+      //    Uses platform-specific logic: on Windows it checks process names;
+      //    on Android it checks MediaProjection / virtual display names.
       bool blacklistedProcess = false;
-      try { blacklistedProcess = await _channel.invokeMethod('isBlacklistedProcessRunning') ?? false; } catch (_) {}
+      try {
+        blacklistedProcess =
+            await _channel.invokeMethod('isBlacklistedProcessRunning') ?? false;
+      } catch (_) {}
 
       bool screenRecording = false;
-      try { screenRecording = await _channel.invokeMethod('isScreenRecording') ?? false; } catch (_) {}
+      try {
+        screenRecording =
+            await _channel.invokeMethod('isScreenRecording') ?? false;
+      } catch (_) {}
+
+      bool bluetooth = false;
+      try {
+        bluetooth = await _channel.invokeMethod('isBluetoothEnabled') ?? false;
+      } catch (_) {}
+
+      bool wiredHeadset = true;
+      try {
+        wiredHeadset = await _channel.invokeMethod('isWiredHeadsetOn') ?? true;
+      } catch (_) {}
 
       bool changed = false;
-      if (_isExternalDisplayConnected != displaysConnected) {
-        _isExternalDisplayConnected = displaysConnected;
+
+      if (_isExternalDisplayConnected != displaysConfirmed) {
+        _isExternalDisplayConnected = displaysConfirmed;
         changed = true;
       }
       if (_isScreenRecording != screenRecording) {
@@ -122,4 +157,3 @@ class SecurityService extends ChangeNotifier {
     super.dispose();
   }
 }
-

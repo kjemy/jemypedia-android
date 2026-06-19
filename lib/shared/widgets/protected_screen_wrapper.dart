@@ -31,7 +31,8 @@ class ProtectedScreenWrapper extends StatelessWidget {
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 40.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28.0, vertical: 40.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -41,7 +42,8 @@ class ProtectedScreenWrapper extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: bloodyRed.withOpacity(0.1),
                             shape: BoxShape.circle,
-                            border: Border.all(color: bloodyRed.withOpacity(0.3), width: 1.5),
+                            border: Border.all(
+                                color: bloodyRed.withOpacity(0.3), width: 1.5),
                           ),
                           child: const Icon(
                             Icons.gavel_rounded,
@@ -67,7 +69,8 @@ class ProtectedScreenWrapper extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E1E24),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.05)),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.4),
@@ -92,39 +95,64 @@ class ProtectedScreenWrapper extends StatelessWidget {
                               const SizedBox(height: 12),
                               ...[
                                 {
-                                  'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء، إلخ)',
-                                  'isOk': !(securityService.isRooted || securityService.isEmulator || securityService.isDebuggerConnected),
+                                  'text':
+                                      'إيقاف الكاست، الميرور، وأي اتصال بشاشة HDMI خارجية',
+                                  'isOk': !securityService
+                                      .isExternalDisplayConnected,
+                                },
+                                {
+                                  'text':
+                                      'إيقاف أي برنامج لتسجيل الشاشة أو الصوت (OBS, Bandicam, Audacity...)',
+                                  'isOk': !securityService
+                                      .isBlacklistedProcessRunning,
+                                },
+                                {
+                                  'text':
+                                      'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء، إلخ)',
+                                  'isOk': !(securityService.isRooted ||
+                                      securityService.isEmulator ||
+                                      securityService.isDebuggerConnected),
                                 },
                               ].map((check) {
-                                    final bool isOk = check['isOk'] as bool;
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 6.0),
-                                      child: Row(
-                                        textDirection: TextDirection.rtl,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            isOk ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                                            color: isOk ? Colors.greenAccent : bloodyRed,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: Text(
-                                              check['text'] as String,
-                                              textDirection: TextDirection.rtl,
-                                              style: TextStyle(
-                                                color: isOk ? Colors.white70 : Colors.white,
-                                                fontSize: 14,
-                                                fontWeight: isOk ? FontWeight.normal : FontWeight.bold,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                final bool isOk = check['isOk'] as bool;
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: Row(
+                                    textDirection: TextDirection.rtl,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isOk
+                                            ? Icons.check_circle_rounded
+                                            : Icons.cancel_rounded,
+                                        color: isOk
+                                            ? Colors.greenAccent
+                                            : bloodyRed,
+                                        size: 20,
                                       ),
-                                    );
-                                  }),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          check['text'] as String,
+                                          textDirection: TextDirection.rtl,
+                                          style: TextStyle(
+                                            color: isOk
+                                                ? Colors.white70
+                                                : Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: isOk
+                                                ? FontWeight.normal
+                                                : FontWeight.bold,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
                               const SizedBox(height: 20),
                               const Divider(color: Colors.white10),
                               const SizedBox(height: 12),
@@ -132,7 +160,9 @@ class ProtectedScreenWrapper extends StatelessWidget {
                                 textDirection: TextDirection.rtl,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.warning_rounded, color: bloodyRed.withOpacity(0.8), size: 20),
+                                  Icon(Icons.warning_rounded,
+                                      color: bloodyRed.withOpacity(0.8),
+                                      size: 20),
                                   const SizedBox(width: 8),
                                   const Expanded(
                                     child: Text(
@@ -172,4 +202,3 @@ class ProtectedScreenWrapper extends StatelessWidget {
     );
   }
 }
-
