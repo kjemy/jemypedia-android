@@ -568,13 +568,8 @@ class WordPressService {
   }
 
   // ─── Security Tokens ───────────────────────────────────────────
-  Future<String?> generateVideoToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('user_email');
-    final password = prefs.getString('user_password');
+  Future<String?> generateVideoToken(String email, String password) async {
     final hwid = await getDeviceId();
-
-    if (email == null || password == null) return null;
 
     try {
       final response = await _client.post(

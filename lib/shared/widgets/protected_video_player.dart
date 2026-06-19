@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../core/services/security_service.dart';
 import '../../core/services/wordpress_service.dart';
 import '../../core/services/hls_proxy_service.dart';
+import '../../core/providers/auth_provider.dart';
 
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -340,6 +341,12 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
       if (widget.keyToken != null && widget.keyToken!.isNotEmpty) {
         hlsProxy.setKeyToken(widget.keyToken);
         debugPrint("Key Token set in proxy: ${widget.keyToken}");
+      }
+      
+      // Inject credentials for one-time video key tokens
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.userEmail != null && authProvider.userPassword != null) {
+        hlsProxy.setCredentials(authProvider.userEmail!, authProvider.userPassword!);
       }
 
       // Route the video URL through our local HLS proxy.

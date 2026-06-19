@@ -18,6 +18,13 @@ class HlsProxyService {
   HttpServer? _server;
   int _port = 0;
   String? _keyToken;
+  String? _userEmail;
+  String? _userPassword;
+
+  void setCredentials(String email, String password) {
+    _userEmail = email;
+    _userPassword = password;
+  }
 
   static const _appToken = 'JEMY_SECURE_12345';
   static const _referer = 'https://www.jemypedia.com/';
@@ -83,9 +90,11 @@ class HlsProxyService {
 
       // If the player is requesting the encryption key, dynamically fetch a one-time token
       if (rawUrl.toLowerCase().contains('.key')) {
-        final token = await WordPressService().generateVideoToken();
-        if (token != null) {
-          finalTargetUri = Uri.parse('${WordPressService.baseUrl}/video-token/serve?token=$token');
+        if (_userEmail != null && _userPassword != null) {
+          final token = await WordPressService().generateVideoToken(_userEmail!, _userPassword!);
+          if (token != null) {
+            finalTargetUri = Uri.parse('${WordPressService.baseUrl}/video-token/serve?token=$token');
+          }
         }
       }
 
