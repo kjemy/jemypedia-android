@@ -165,40 +165,186 @@ bool IsBlacklistedProcessRunning() {
     // Communication apps (Discord, Teams, Skype) are excluded: they don't capture
     // protected audio by default and their presence should NOT block legitimate users.
     // Windows GameBar is also excluded as it is a system component.
+    // ─── COMPREHENSIVE RECORDING SOFTWARE BLACKLIST ──────────────────────────
+    // Matched by exact process name (lowercase .exe).
+    // Does NOT include OS components, communication apps, or browsers.
     std::vector<std::string> blacklist = {
-        // Screen + audio/video recorders
-        "obs64.exe", "obs32.exe", "obs-browser-page.exe",
-        "audacity.exe",
-        "audition.exe",              // Adobe Audition
-        "adobe audition.exe",
-        "camtasia.exe", "camrecorder.exe", "camtasiastudio.exe",
+
+        // ── OBS & streaming ──────────────────────────────────────────────────
+        "obs64.exe", "obs32.exe", "obs-browser-page.exe", "obs_browser_page.exe",
+        "obsportable.exe",
+
+        // ── Screen recorders ─────────────────────────────────────────────────
         "bandicam.exe", "bdcam.exe",
-        "action.exe",                // Mirillis Action!
+        "camtasia.exe", "camtasiastudio.exe", "camrecorder.exe",
         "fraps.exe",
-        "xsplit.core.exe", "xsplitbroadcaster.exe", "xsplitgamecaster.exe",
-        "soundforge.exe", "soundforgepro.exe",
-        "reaper.exe",
-        "fl.exe", "flstudio.exe",    // FL Studio (Fruity Loops)
-        "ableton live.exe", "ableton.exe",  // Ableton Live
-        "logic pro.exe",
-        "cubase.exe", "cubasele.exe",
-        "nuendo.exe",
-        "protools.exe", "pro tools.exe",
-        "studio one.exe",
+        "action.exe",               // Mirillis Action!
+        "xsplit.core.exe", "xsplitbroadcaster.exe", "xsplitgamecaster.exe", "xsplitvcam.exe",
         "sharex.exe",
         "snagit32.exe", "snagit64.exe", "snagiteditor.exe",
-        "filmora.exe", "filmorascrn.exe",
+        "filmora.exe", "filmorascrn.exe", "filmora9.exe",
         "icecreamscreenrecorder.exe",
         "tinytake.exe",
         "loom.exe",
-        "apowerrec.exe", "apowersoft.exe",
-        "flashbackrecorder.exe",
+        "apowerrec.exe", "apowersoft.exe", "apowermirror.exe",
+        "flashbackrecorder.exe", "flashbackconnect.exe",
         "d3dgear.exe",
         "dxtory.exe",
         "playclaw.exe",
-        "zoom.exe",                  // Zoom (can record audio sessions)
-        "zoomopener.exe",
-        "nvsphelper64.exe"           // NVIDIA ShadowPlay helper
+        "nvsphelper64.exe",         // NVIDIA ShadowPlay
+        "shadowplayhelper.exe",
+        "nvcpluicommandserver.exe",
+        "geforceexperience.exe",
+        "radeonrelive.exe",         // AMD Radeon ReLive
+        "radeonsoftware.exe",
+        "rss.exe",                  // Radeon Software Streaming
+        "hypercam.exe", "hypercam2.exe",
+        "ezvid.exe",
+        "debut.exe",
+        "captureone.exe",
+        "screencastify.exe",
+        "screenpresso.exe",
+        "capto.exe",
+        "recordit.exe",
+        "gifox.exe",
+        "kazam.exe",
+        "recordmydesktop.exe",
+        "simplescreenrecorder.exe",
+        "vokoscreen.exe", "vokoscreenng.exe",
+        "greenrecorder.exe",
+        "kronichscreen.exe",
+        "movavi screen recorder.exe", "movaviscreenrecorder.exe",
+        "movavi.exe",
+        "screenrec.exe",
+        "ispring free cam.exe",
+        "screenflow.exe",
+        "wirecast.exe",
+        "vmix.exe",
+        "streamlabs obs.exe", "streamlabs.exe",
+        "prism live studio.exe",
+        "mirillis action.exe",
+        "gecata.exe",               // Gecata by Movavi
+        "faststone capture.exe", "fsviewer.exe",
+        "ashampoo snap.exe",
+        "droplr.exe",
+        "gyazo.exe",                // Gyazo GIF / video
+        "lightshot.exe",
+        "greenshot.exe",
+        "picpick.exe",
+        "screentogif.exe",
+
+        // ── Audio recorders / DAWs ────────────────────────────────────────────
+        "audacity.exe",
+        "audition.exe", "adobe audition.exe",   // Adobe Audition
+        "soundforge.exe", "soundforgepro.exe", "soundforgepro15.exe",
+        "reaper.exe", "reaper64.exe",
+        "fl.exe", "flstudio.exe",               // FL Studio
+        "ableton.exe", "ableton live.exe",      // Ableton Live
+        "cubase.exe", "cubasele.exe", "cubase12.exe", "cubase13.exe",
+        "nuendo.exe",
+        "protools.exe", "pro tools.exe",
+        "studio one.exe", "studioone.exe",
+        "logic pro.exe",
+        "garageband.exe",
+        "reason.exe",               // Reason Studios
+        "bitwig studio.exe", "bitwig.exe",
+        "samplitude.exe",
+        "sequoia.exe",
+        "presonus studio one.exe",
+        "mixcraft.exe",
+        "sonar.exe", "cakewalk.exe",
+        "waveform.exe",             // Tracktion Waveform
+        "cockos reaper.exe",
+        "n-track studio.exe",
+        "kdenlive.exe",
+        "davinci resolve.exe", "resolve.exe",  // DaVinci Resolve (audio/video editor)
+        "vegas pro.exe", "vegaspro.exe", "vegas.exe",
+        "premiere pro.exe", "adobepremiere.exe",
+        "finalcut.exe",
+        "avisynth.exe", "virtualdub.exe", "virtualdub2.exe",
+        "handbrake.exe",
+        "mkv toolnix.exe", "mkvtoolnix-gui.exe",
+        "total recorder.exe", "totalrecorder.exe",
+        "mp3mymp3.exe",
+        "wavosaur.exe",
+        "ocenaudio.exe",
+        "goldwave.exe",
+        "nero wave editor.exe",
+        "wavepad.exe",
+        "adobe soundbooth.exe",
+        "kristal audio engine.exe",
+        "traverse.exe",
+        "audio recorder.exe",
+        "apowersoft audio recorder.exe",
+        "voice recorder.exe",
+
+        // ── Video capture / streaming tools ──────────────────────────────────
+        "zoom.exe", "zoomopener.exe",           // Zoom (can record meetings)
+        "webex.exe", "ciscowebex.exe",          // Cisco Webex
+        "gotomeeting.exe",
+        "bigbluebutton.exe",
+        "jitsi meet.exe",
+        "kaltura capture.exe",
+        "panopto recorder.exe", "panoptorecorder.exe",
+        "camstudio.exe",
+        "screencastomatic.exe",
+        "screencastify.exe",
+        "loom-recorder.exe",
+        "clipchamp.exe",
+        "clip studio.exe",
+        "acethinker.exe",
+        "recordpad.exe",
+        "screenrecorderapp.exe",
+        "icecream screen recorder.exe",
+
+        // ── Remote desktop / mirroring (can capture audio/screen) ────────────
+        "anydesk.exe",
+        "teamviewer.exe", "teamviewer_desktop.exe",
+        "rdpclip.exe",              // RDP clipboard (virtual channel for audio)
+        "mstsc.exe",                // Microsoft RDP (external session)
+        "parsec.exe",
+        "rustdesk.exe",
+        "vnc.exe", "vncviewer.exe", "vncserver.exe",
+        "realvnc.exe",
+        "ultravnc.exe",
+        "tightvnc.exe",
+        "splashtop.exe",
+        "logmein.exe",
+
+        // ── Virtual audio / loopback cables ──────────────────────────────────
+        "voicemeeter.exe", "voicemeeterpro.exe", "voicemeeterbanana.exe", "voicemeeter8.exe",
+        "vbcable.exe",
+        "blackhole.exe",
+        "virtual audio cable.exe", "vac.exe",
+        "soundflower.exe",
+        "stealth audio capture.exe",
+        "audio router.exe",
+        "equalizerapo.exe",
+        "peacock.exe",              // Peace APO GUI
+        "reastream.exe",
+        "jack.exe", "jackd.exe",    // JACK Audio
+        "asio4all.exe",
+
+        // ── Network / protocol-level stream grabbers ──────────────────────────
+        "streamlink.exe",
+        "yt-dlp.exe", "youtube-dl.exe",
+        "ffmpeg.exe", "ffprobe.exe",
+        "vlc.exe",                  // VLC (can record streams)
+        "mpc-hc.exe", "mpc-hc64.exe", "mpc-be.exe", "mpc-be64.exe",
+        "potplayer.exe", "potplayermini.exe", "potplayermini64.exe",
+        "kmplayer.exe",
+        "smplayer.exe",
+        "mpv.exe",
+        "mediainfo.exe",
+        "wireshark.exe",            // Network packet capture
+        "fiddler.exe", "fiddler everywhere.exe",
+        "charles.exe",              // HTTP proxy
+        "mitmproxy.exe",
+        "burpsuite.exe",
+        "hxd.exe",
+        "x64dbg.exe", "x32dbg.exe",
+        "ollydbg.exe",
+        "cheatengine.exe", "cheatengine-x86_64.exe",
     };
 
     for (i = 0; i < cProcesses; i++) {
