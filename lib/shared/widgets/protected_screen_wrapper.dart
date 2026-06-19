@@ -92,10 +92,6 @@ class ProtectedScreenWrapper extends StatelessWidget {
                               const SizedBox(height: 12),
                               ...[
                                 {
-                                  'text': 'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
-                                  'isOk': !securityService.isExternalDisplayConnected,
-                                },
-                                {
                                   'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت (مثل OBS، تسجيل الصوت، إلخ)',
                                   'isOk': !securityService.isBlacklistedProcessRunning,
                                 },

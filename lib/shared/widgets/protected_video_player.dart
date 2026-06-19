@@ -188,11 +188,6 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
               builder: (dialogCtx, secService, _) {
                 final checks = [
                   {
-                    'text':
-                        'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
-                    'isOk': !secService.isExternalDisplayConnected,
-                  },
-                  {
                     'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت',
                     'isOk': !secService.isBlacklistedProcessRunning,
                   },
