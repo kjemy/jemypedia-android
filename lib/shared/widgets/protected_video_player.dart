@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
@@ -44,6 +45,10 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   bool _hasError = false;
   String _errorDetail = '';
   bool _hasMarkedCompleted = false;
+  bool _isRecordingDetected = false;
+  StreamSubscription? _securitySubscription;
+  static const _securityEvents = EventChannel('jemypedia/security_events');
+  static const _securityChannel = MethodChannel('jemypedia/security');
   late SecurityService _securityService;
   Timer? _watchTimer;
   double _lastLoggedPosition = 0.0;
@@ -51,6 +56,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   @override
   void initState() {
     super.initState();
+    _startSecurityGuard();
     _player = Player();
     _controller = VideoController(_player);
     
@@ -362,7 +368,48 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   }
 
   @override
+  
+  void _startSecurityGuard() {
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        _securitySubscription = _securityEvents.receiveBroadcastStream().listen((event) {
+          if (event is Map) {
+            final type = event['type'] as String?;
+            if (type == 'screen_recording_detected' && !_isRecordingDetected) {
+              _onRecordingDetected();
+            } else if (type == 'screen_recording_stopped' && _isRecordingDetected) {
+              _onRecordingStopped();
+            }
+          }
+        });
+      } catch (e) {
+        debugPrint('Security EventChannel error: ');
+      }
+    }
+  }
+
+  void _onRecordingDetected() {
+    if (!mounted) return;
+    setState(() => _isRecordingDetected = true);
+    _player.pause();
+    _player.setVolume(0.0);
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityChannel.invokeMethod('muteAudio');
+    }
+  }
+
+  void _onRecordingStopped() {
+    if (!mounted) return;
+    setState(() => _isRecordingDetected = false);
+    _player.setVolume(100.0);
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityChannel.invokeMethod('unmuteAudio');
+    }
+  }
+
+  @override
   void dispose() {
+    _securitySubscription?.cancel();
     _watchTimer?.cancel();
     _securityService.removeListener(_onSecurityChanged);
     _player.dispose();
@@ -485,6 +532,7 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
   @override
   void initState() {
     super.initState();
+    _startSecurityGuard();
     // إخفاء شريط الحالة عند دخول Fullscreen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     // تدوير الشاشة أفقياً
@@ -495,7 +543,48 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
   }
 
   @override
+  
+  void _startSecurityGuard() {
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        _securitySubscription = _securityEvents.receiveBroadcastStream().listen((event) {
+          if (event is Map) {
+            final type = event['type'] as String?;
+            if (type == 'screen_recording_detected' && !_isRecordingDetected) {
+              _onRecordingDetected();
+            } else if (type == 'screen_recording_stopped' && _isRecordingDetected) {
+              _onRecordingStopped();
+            }
+          }
+        });
+      } catch (e) {
+        debugPrint('Security EventChannel error: ');
+      }
+    }
+  }
+
+  void _onRecordingDetected() {
+    if (!mounted) return;
+    setState(() => _isRecordingDetected = true);
+    _player.pause();
+    _player.setVolume(0.0);
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityChannel.invokeMethod('muteAudio');
+    }
+  }
+
+  void _onRecordingStopped() {
+    if (!mounted) return;
+    setState(() => _isRecordingDetected = false);
+    _player.setVolume(100.0);
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityChannel.invokeMethod('unmuteAudio');
+    }
+  }
+
+  @override
   void dispose() {
+    _securitySubscription?.cancel();
     // إعادة كل شيء لحالته عند الخروج من Fullscreen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
@@ -564,6 +653,7 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
   @override
   void initState() {
     super.initState();
+    _startSecurityGuard();
     _startAnimationCycle();
     _startMasterVisibilityCycle();
   }
@@ -602,7 +692,48 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
   }
 
   @override
+  
+  void _startSecurityGuard() {
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        _securitySubscription = _securityEvents.receiveBroadcastStream().listen((event) {
+          if (event is Map) {
+            final type = event['type'] as String?;
+            if (type == 'screen_recording_detected' && !_isRecordingDetected) {
+              _onRecordingDetected();
+            } else if (type == 'screen_recording_stopped' && _isRecordingDetected) {
+              _onRecordingStopped();
+            }
+          }
+        });
+      } catch (e) {
+        debugPrint('Security EventChannel error: ');
+      }
+    }
+  }
+
+  void _onRecordingDetected() {
+    if (!mounted) return;
+    setState(() => _isRecordingDetected = true);
+    _player.pause();
+    _player.setVolume(0.0);
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityChannel.invokeMethod('muteAudio');
+    }
+  }
+
+  void _onRecordingStopped() {
+    if (!mounted) return;
+    setState(() => _isRecordingDetected = false);
+    _player.setVolume(100.0);
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityChannel.invokeMethod('unmuteAudio');
+    }
+  }
+
+  @override
   void dispose() {
+    _securitySubscription?.cancel();
     _timer?.cancel();
     super.dispose();
   }

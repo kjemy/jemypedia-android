@@ -24,6 +24,8 @@ import 'package:jemypedia_app/core/services/hls_proxy_service.dart';
 
 import 'package:safe_device/safe_device.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
+import 'dart:io';
 
 const String appVersion = '2.2.0';
 
@@ -122,6 +124,34 @@ class ThemeProvider extends ChangeNotifier {
   }
 }
 
+
+class GlobalSecurityMonitor extends StatefulWidget {
+  final Widget child;
+  const GlobalSecurityMonitor({super.key, required this.child});
+  @override
+  State<GlobalSecurityMonitor> createState() => _GlobalSecurityMonitorState();
+}
+
+class _GlobalSecurityMonitorState extends State<GlobalSecurityMonitor> {
+  static const _securityEvents = EventChannel('jemypedia/security_events');
+  static const _securityChannel = MethodChannel('jemypedia/security');
+  
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb && Platform.isAndroid) {
+      _securityEvents.receiveBroadcastStream().listen((event) {
+        if (event is Map && event['type'] == 'screen_recording_detected') {
+          _securityChannel.invokeMethod('stopApp');
+          exit(0);
+        }
+      });
+    }
+  }
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 class JemyAcademyApp extends StatefulWidget {
   const JemyAcademyApp({super.key});
 
@@ -136,7 +166,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
   Widget build(BuildContext context) {
     return Consumer2<ThemeProvider, LocaleProvider>(
       builder: (context, themeProvider, localeProvider, child) {
-        return MaterialApp(
+        return GlobalSecurityMonitor(child: MaterialApp(
           title: 'Jemypedia',
           debugShowCheckedModeBanner: false,
           builder: (context, widget) {
@@ -201,7 +231,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
             iconTheme: const IconThemeData(color: Colors.white, size: 24),
           ),
           home: const SplashScreen(),
-        );
+        ));
       },
     );
   }

@@ -8,13 +8,34 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
 import java.io.File
+import android.os.Handler
+import android.os.Looper
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "jemypedia/security"
+    private val EVENTS_CHANNEL = "jemypedia/security_events"
+    private var eventSink: EventChannel.EventSink? = null
+
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENTS_CHANNEL).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    eventSink = events
+                    startDisplayListener()
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    eventSink = null
+                    stopDisplayListener()
+                }
+            }
+        )
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "getExternalDisplaysCount" -> {
@@ -57,6 +78,28 @@ class MainActivity: FlutterActivity() {
                 }
                 "isWiredHeadsetOn" -> {
                     result.success(isWiredHeadsetOn())
+                }
+                "muteAudio" -> {
+                    try {
+                        val audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+                        audioManager.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_MUTE, 0)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("MUTE_FAILED", e.message, null)
+                    }
+                }
+                "unmuteAudio" -> {
+                    try {
+                        val audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+                        audioManager.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_UNMUTE, 0)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("UNMUTE_FAILED", e.message, null)
+                    }
+                }
+                "stopApp" -> {
+                    finishAffinity()
+                    result.success(true)
                 }
                 else -> {
                     result.notImplemented()
@@ -149,5 +192,40 @@ class MainActivity: FlutterActivity() {
         }
         return false
     }
-}
+    private var displayManager: DisplayManager? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) { checkDisplayStatus("added", displayId) }
+        override fun onDisplayRemoved(displayId: Int) { checkDisplayStatus("removed", displayId) }
+        override fun onDisplayChanged(displayId: Int) { checkDisplayStatus("changed", displayId) }
+    }
+
+    private fun startDisplayListener() {
+        displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        displayManager?.registerDisplayListener(displayListener, mainHandler)
+        checkAllDisplays()
+    }
+
+    private fun stopDisplayListener() {
+        displayManager?.unregisterDisplayListener(displayListener)
+    }
+
+    private fun checkAllDisplays() {
+        val displays = displayManager?.displays ?: return
+        var recordingDetected = false
+        for (display in displays) {
+            if (display.displayId != Display.DEFAULT_DISPLAY) {
+                val name = display.name.lowercase()
+                val isVirtual = name.contains("virtual") || name.contains("record") || name.contains("capture") || name.contains("overlay")
+                if (isVirtual) recordingDetected = true
+            }
+        }
+        val type = if (recordingDetected) "screen_recording_detected" else "screen_recording_stopped"
+        mainHandler.post { eventSink?.success(mapOf("type" to type)) }
+    }
+
+    private fun checkDisplayStatus(action: String, displayId: Int) {
+        checkAllDisplays()
+    }
+}
