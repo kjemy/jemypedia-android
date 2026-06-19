@@ -1,12 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- ─── أذونات الأمان: منع تسجيل الشاشة وكتم الصوت ─────────────────────── -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-    <!-- منع التسجيل من المايكروفون أثناء تشغيل التطبيق -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" android:required="false"/>
-
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <application
-        android:label="jemy_academy_app"
+        android:label="Jemypedia"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
