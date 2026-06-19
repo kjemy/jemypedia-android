@@ -5,91 +5,102 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:screen_protector/screen_protector.dart';
-import 'package:jemypedia_app/core/theme/app_colors.dart';
-import 'package:jemypedia_app/shared/widgets/glass_container.dart';
-import 'package:jemypedia_app/features/home/ui/home_screen.dart';
-import 'package:jemypedia_app/core/providers/locale_provider.dart';
-import 'package:jemypedia_app/core/providers/articles_provider.dart';
-import 'package:jemypedia_app/core/providers/courses_provider.dart';
-import 'package:jemypedia_app/core/providers/auth_provider.dart';
-import 'package:jemypedia_app/core/providers/favorites_provider.dart';
-import 'package:jemypedia_app/core/providers/chat_provider.dart';
-import 'package:jemypedia_app/core/services/wordpress_service.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:jemypedia_app/features/splash/splash_screen.dart';
-import 'package:jemypedia_app/core/services/security_service.dart';
-import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
-import 'package:jemypedia_app/core/services/hls_proxy_service.dart';
-
-import 'package:safe_device/safe_device.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+import 'package:screen_protector/screen_protector.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
+import 'package:jemy_academy_app/core/theme/app_colors.dart';
+import 'package:win32/win32.dart';
+import 'dart:ffi' hide Size;
+import 'package:ffi/ffi.dart';
+import 'package:jemy_academy_app/shared/widgets/glass_container.dart';
+import 'package:jemy_academy_app/features/home/ui/home_screen.dart';
+import 'package:jemy_academy_app/core/providers/locale_provider.dart';
+import 'package:jemy_academy_app/core/providers/articles_provider.dart';
+import 'package:jemy_academy_app/core/providers/courses_provider.dart';
+import 'package:jemy_academy_app/core/providers/auth_provider.dart';
+import 'package:jemy_academy_app/core/providers/favorites_provider.dart';
+import 'package:jemy_academy_app/features/support/ui/chat_screen.dart';
+import 'package:media_kit/media_kit.dart';
 
-const String appVersion = '2.2.0';
+// ─── قنوات الأمان العامة ───────────────────────────────────────────────────
+const _kSecurityChannel = MethodChannel('com.jemy.academy/security');
+const _kSecurityEvents  = EventChannel('com.jemy.academy/security_events');
+
+const String appVersion = '2.1.0';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    MediaKit.ensureInitialized(); // مطلوب لتهيئة مشغل الفيديو
-  } catch (e) {
-    debugPrint("MediaKit initialization error: $e");
+  MediaKit.ensureInitialized(); // مطلوب لتهيئة مشغل الفيديو
+  
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    await windowManager.ensureInitialized();
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(1280, 800),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+      title: "Jemy Academy",
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
   }
 
-  // Start local HLS proxy to inject security headers on all video requests
-  await hlsProxy.start();
-
-  // تفعيل نظام الحماية (منع تصوير الشاشة وتسجيل الفيديو)
+  // ─── نظام الحماية الفولاذي (منع التسجيل + كشف Root + حماية الصوت) ─────────
   if (!kIsWeb) {
-    try {
-      if (Platform.isAndroid || Platform.isIOS) {
-        await ScreenProtector.preventScreenshotOn();
-      }
-    } catch (e) {
-      debugPrint("Security init error: $e");
-    }
-
-    // تفعيل حماية الأندرويد ضد الروت والمحاكيات
     if (Platform.isAndroid) {
+      // الطبقة 1: FLAG_SECURE (شاشة سوداء عند التسجيل)
+      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+
+      // الطبقة 2: كشف Root - إغلاق فوري إذا كان الجهاز مكسور
       try {
-        bool isJailBroken = await SafeDevice.isJailBroken;
-        bool isRealDevice = await SafeDevice.isRealDevice;
-        
-        if (isJailBroken || !isRealDevice) {
-          runApp(
-            const MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: Scaffold(
-                backgroundColor: Color(0xFF8B0000), // Dark Red
-                body: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.security, color: Colors.white, size: 80),
-                        SizedBox(height: 20),
-                        Text(
-                          'Security Violation',
-                          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Rooted device or Emulator detected.\nThe application cannot run on this device for security reasons.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            )
-          );
-          return; // Stop app initialization
+        final isRooted = await FlutterJailbreakDetection.jailbroken;
+        if (isRooted) {
+          debugPrint('🚨 ROOT DETECTED - Closing app immediately.');
+          exit(0);
+        }
+        final devMode = await FlutterJailbreakDetection.developerMode;
+        if (devMode) {
+          debugPrint('⚠️ Developer mode is ON - user is a developer.');
         }
       } catch (e) {
-        debugPrint("Anti-tamper check failed: $e");
+        debugPrint('Root detection error: $e');
       }
+
+    } else if (Platform.isIOS) {
+      await ScreenProtector.preventScreenshotOn();
+      // كشف Jailbreak على iOS
+      try {
+        final isJailbroken = await FlutterJailbreakDetection.jailbroken;
+        if (isJailbroken) {
+          debugPrint('🚨 JAILBREAK DETECTED - Closing app immediately.');
+          exit(0);
+        }
+      } catch (e) {
+        debugPrint('Jailbreak detection error: $e');
+      }
+
+    } else if (Platform.isWindows) {
+      // حماية ويندوز: WDA_EXCLUDEFROMCAPTURE (0x11) يمنع HDMI والتسجيل
+      Timer.periodic(const Duration(milliseconds: 500), (timer) {
+        try {
+          final windowTitle = "Jemy Academy".toNativeUtf16();
+          final hwnd = FindWindow(nullptr, windowTitle);
+          free(windowTitle);
+          if (hwnd != 0) {
+            SetWindowDisplayAffinity(hwnd, 0x00000011);
+            if (timer.tick > 5) timer.cancel();
+            debugPrint("Windows Security: Screen capture blocked.");
+          }
+        } catch (e) {
+          debugPrint("Windows Security Error: \$e");
+        }
+        if (timer.tick > 30) timer.cancel();
+      });
     }
   }
 
@@ -103,7 +114,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
-        ChangeNotifierProvider(create: (_) => SecurityService()),
       ],
       child: const JemyAcademyApp(),
     ),
@@ -130,14 +140,85 @@ class JemyAcademyApp extends StatefulWidget {
 }
 
 class _JemyAcademyAppState extends State<JemyAcademyApp> {
-  // No initState needed - SplashScreen handles all loading & auto-login
+  StreamSubscription? _globalSecuritySub;
+  bool _globalRecordingDetected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _handleInitialAuth();
+    _startGlobalSecurityMonitor();
+  }
+
+  /// مراقبة أمنية على مستوى التطبيق كله - تُغلق التطبيق عند أي تسجيل
+  void _startGlobalSecurityMonitor() {
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        _globalSecuritySub = _kSecurityEvents
+            .receiveBroadcastStream()
+            .listen((event) {
+          if (event is Map) {
+            final type = event['type'] as String?;
+            if (type == 'screen_recording_detected' && !_globalRecordingDetected) {
+              _globalRecordingDetected = true;
+              debugPrint('🚨 GLOBAL MONITOR: Recording detected - muting and closing app');
+              // كتم الصوت فوراً
+              _kSecurityChannel.invokeMethod('muteAudio').catchError((_) {});
+              // إغلاق التطبيق بعد 3 ثوانٍ (بعد إظهار شاشة التحذير من المشغل)
+              Future.delayed(const Duration(seconds: 4), () {
+                _kSecurityChannel.invokeMethod('stopApp').catchError((_) => exit(0));
+              });
+            } else if (type == 'screen_recording_stopped') {
+              _globalRecordingDetected = false;
+              _kSecurityChannel.invokeMethod('unmuteAudio').catchError((_) {});
+            }
+          }
+        }, onError: (e) => debugPrint('Global security error: $e'));
+      } catch (e) {
+        debugPrint('Global security monitor init error: $e');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _globalSecuritySub?.cancel();
+    super.dispose();
+  }
+
+
+  Future<void> _handleInitialAuth() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final coursesProvider = Provider.of<CoursesProvider>(context, listen: false);
+    
+    final creds = await authProvider.getSavedCredentials();
+    if (creds != null) {
+      final hwid = await HwidService.getDeviceFingerprint();
+      final userData = await coursesProvider.verifyUserSubscription(
+        creds['email']!, 
+        creds['password']!, 
+        hwid
+      );
+      
+      if (userData != null && userData['success'] == true) {
+        await authProvider.login(
+          creds['email']!, 
+          creds['password']!, 
+          rememberMe: true, 
+          userData: userData
+        );
+      }
+    }
+    // Always fetch initial content (articles, ticker, etc.)
+    await coursesProvider.fetchCourses();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer2<ThemeProvider, LocaleProvider>(
       builder: (context, themeProvider, localeProvider, child) {
         return MaterialApp(
-          title: 'Jemypedia',
+          title: 'Jemy Academy',
           debugShowCheckedModeBanner: false,
           builder: (context, widget) {
             // Restore ErrorWidget logic
@@ -167,7 +248,32 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
               );
             };
 
-            return ProtectedScreenWrapper(child: widget!);
+            return Stack(
+              children: [
+                widget!,
+                // 🚀 Global Floating Chat Icon (Visible on EVERY screen)
+                Positioned(
+                  bottom: 30,
+                  right: 20,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: FloatingActionButton.large(
+                      heroTag: 'global_chat_fab',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ChatScreen()),
+                        );
+                      },
+                      backgroundColor: Colors.white,
+                      elevation: 20,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      child: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF212121), size: 35),
+                    ),
+                  ),
+                ),
+              ],
+            );
           },
           themeMode: themeProvider.themeMode,
           locale: localeProvider.locale,
@@ -200,7 +306,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
                 : GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
             iconTheme: const IconThemeData(color: Colors.white, size: 24),
           ),
-          home: const SplashScreen(),
+          home: const HomeScreen(),
         );
       },
     );
@@ -280,7 +386,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/images/app_icon.png',
+                        'assets/images/app_icon.jpg',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.school_rounded, size: 40, color: Colors.white24),
                       ),
@@ -385,15 +491,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               final coursesProvider = Provider.of<CoursesProvider>(context, listen: false);
                               
                               // Verify subscription via HWID. This also validates the credentials.
-                              final fingerprint = await WordPressService.getDeviceId();
+                              final fingerprint = await HwidService.getDeviceFingerprint();
                               final userData = await coursesProvider.verifyUserSubscription(email, password, fingerprint);
                               
                               if (context.mounted) {
-                                // userData is null = network error
-                                // userData['success'] == false = server returned an error (wrong creds, device limit...)
-                                // userData['success'] == true  = login OK
-                                if (userData != null && userData['success'] == true) {
+                                setState(() => _isLoading = true); // Keep loading while processing
+                                
+                                if (userData != null) {
+                                  // Mark user as logged in, store credentials if remember me is checked
                                   await authProvider.login(email, password, rememberMe: _rememberMe, userData: userData);
+                                  
                                   setState(() => _isLoading = false);
                                   Navigator.pushReplacement(
                                     context,
@@ -401,21 +508,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                                 } else {
                                   setState(() => _isLoading = false);
-                                  // Show the server error message (Arabic device-limit message, wrong password, etc.)
-                                  final errMsg = (userData != null && userData['message'] != null)
-                                      ? userData['message'].toString()
-                                      : 'فشل تسجيل الدخول. تحقق من الاتصال بالإنترنت أو بيانات الدخول.';
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        errMsg,
-                                        textDirection: TextDirection.rtl,
-                                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
-                                      ),
-                                      backgroundColor: Colors.red.shade800,
-                                      duration: const Duration(seconds: 5),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
+                                    const SnackBar(content: Text('Login Failed. Invalid credentials or network error.')),
                                   );
                                 }
                               }
@@ -464,4 +558,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
