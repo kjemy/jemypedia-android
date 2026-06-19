@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
@@ -10,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../core/services/security_service.dart';
 import '../../core/services/wordpress_service.dart';
 import '../../core/services/hls_proxy_service.dart';
+
 class ProtectedVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final String? keyToken;
@@ -367,8 +369,6 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
     }
   }
 
-  @override
-  
   void _startSecurityGuard() {
     if (!kIsWeb && Platform.isAndroid) {
       try {
@@ -383,7 +383,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
           }
         });
       } catch (e) {
-        debugPrint('Security EventChannel error: ');
+        debugPrint('Security EventChannel error: $e');
       }
     }
   }
@@ -487,6 +487,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
               context,
               MaterialPageRoute(
                 builder: (_) => _FullscreenVideoPage(
+                  player: _player,
                   controller: _controller,
                   watermarkText: widget.watermarkText,
                   watermarkImageUrl: widget.watermarkImageUrl,
@@ -505,6 +506,11 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
               watermarkImageSize: widget.watermarkImageSize,
             ),
           ),
+        // شاشة سوداء عند تسجيل الشاشة
+        if (_isRecordingDetected)
+          Positioned.fill(
+            child: Container(color: Colors.black),
+          ),
       ],
     );
   }
@@ -512,12 +518,14 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
 
 // ─── صفحة Fullscreen مخصصة تحتوي على العلامة المائية ──────────────────────────
 class _FullscreenVideoPage extends StatefulWidget {
+  final Player player;
   final VideoController controller;
   final String? watermarkText;
   final String? watermarkImageUrl;
   final int watermarkImageSize;
 
   const _FullscreenVideoPage({
+    required this.player,
     required this.controller,
     this.watermarkText,
     this.watermarkImageUrl,
@@ -529,6 +537,11 @@ class _FullscreenVideoPage extends StatefulWidget {
 }
 
 class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
+  bool _isRecordingDetected = false;
+  StreamSubscription? _securitySubscription;
+  static const _securityEvents = EventChannel('jemypedia/security_events');
+  static const _securityChannel = MethodChannel('jemypedia/security');
+
   @override
   void initState() {
     super.initState();
@@ -542,8 +555,6 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
     ]);
   }
 
-  @override
-  
   void _startSecurityGuard() {
     if (!kIsWeb && Platform.isAndroid) {
       try {
@@ -558,7 +569,7 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
           }
         });
       } catch (e) {
-        debugPrint('Security EventChannel error: ');
+        debugPrint('Security EventChannel error: $e');
       }
     }
   }
@@ -566,8 +577,8 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
   void _onRecordingDetected() {
     if (!mounted) return;
     setState(() => _isRecordingDetected = true);
-    _player.pause();
-    _player.setVolume(0.0);
+    widget.player.pause();
+    widget.player.setVolume(0.0);
     if (!kIsWeb && Platform.isAndroid) {
       _securityChannel.invokeMethod('muteAudio');
     }
@@ -576,7 +587,7 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
   void _onRecordingStopped() {
     if (!mounted) return;
     setState(() => _isRecordingDetected = false);
-    _player.setVolume(100.0);
+    widget.player.setVolume(100.0);
     if (!kIsWeb && Platform.isAndroid) {
       _securityChannel.invokeMethod('unmuteAudio');
     }
@@ -619,6 +630,11 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
                 watermarkImageSize: widget.watermarkImageSize,
               ),
             ),
+          // شاشة سوداء عند تسجيل الشاشة في Fullscreen
+          if (_isRecordingDetected)
+            Positioned.fill(
+              child: Container(color: Colors.black),
+            ),
         ],
       ),
     );
@@ -653,7 +669,6 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
   @override
   void initState() {
     super.initState();
-    _startSecurityGuard();
     _startAnimationCycle();
     _startMasterVisibilityCycle();
   }
@@ -692,48 +707,7 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
   }
 
   @override
-  
-  void _startSecurityGuard() {
-    if (!kIsWeb && Platform.isAndroid) {
-      try {
-        _securitySubscription = _securityEvents.receiveBroadcastStream().listen((event) {
-          if (event is Map) {
-            final type = event['type'] as String?;
-            if (type == 'screen_recording_detected' && !_isRecordingDetected) {
-              _onRecordingDetected();
-            } else if (type == 'screen_recording_stopped' && _isRecordingDetected) {
-              _onRecordingStopped();
-            }
-          }
-        });
-      } catch (e) {
-        debugPrint('Security EventChannel error: ');
-      }
-    }
-  }
-
-  void _onRecordingDetected() {
-    if (!mounted) return;
-    setState(() => _isRecordingDetected = true);
-    _player.pause();
-    _player.setVolume(0.0);
-    if (!kIsWeb && Platform.isAndroid) {
-      _securityChannel.invokeMethod('muteAudio');
-    }
-  }
-
-  void _onRecordingStopped() {
-    if (!mounted) return;
-    setState(() => _isRecordingDetected = false);
-    _player.setVolume(100.0);
-    if (!kIsWeb && Platform.isAndroid) {
-      _securityChannel.invokeMethod('unmuteAudio');
-    }
-  }
-
-  @override
   void dispose() {
-    _securitySubscription?.cancel();
     _timer?.cancel();
     super.dispose();
   }
@@ -797,26 +771,24 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
                 ),
               ),
             // Text watermark
-            if (widget.watermarkText != null && widget.watermarkText!.isNotEmpty) ...
-              [
-                if (widget.watermarkImageUrl != null) const SizedBox(height: 6),
-                Text(
-                  widget.watermarkText!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w900,
-                    shadows: [
-                      Shadow(color: color == Colors.black ? Colors.white54 : Colors.black54, blurRadius: 4)
-                    ]
-                  ),
+            if (widget.watermarkText != null && widget.watermarkText!.isNotEmpty) ...[
+              if (widget.watermarkImageUrl != null) const SizedBox(height: 6),
+              Text(
+                widget.watermarkText!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w900,
+                  shadows: [
+                    Shadow(color: color == Colors.black ? Colors.white54 : Colors.black54, blurRadius: 4)
+                  ]
                 ),
-              ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
-
