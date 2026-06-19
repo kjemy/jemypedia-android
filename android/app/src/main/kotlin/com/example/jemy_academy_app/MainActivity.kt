@@ -23,12 +23,16 @@ class MainActivity: FlutterActivity() {
                     var externalCount = 0
                     for (display in displays) {
                         if (display.displayId != Display.DEFAULT_DISPLAY) {
-                            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) display.type else -1
                             val name = display.name.lowercase()
-                            val isVirtual = (type == Display.TYPE_VIRTUAL || 
-                                             name.contains("virtual") || 
+                            val displayStr = display.toString().lowercase()
+                            val isVirtual = (name.contains("virtual") || 
                                              name.contains("record") || 
-                                             name.contains("capture"))
+                                             name.contains("capture") ||
+                                             name.contains("overlay") ||
+                                             name.contains("multiple-display") ||
+                                             displayStr.contains("virtual") ||
+                                             displayStr.contains("type_virtual") ||
+                                             displayStr.contains("type=virtual"))
                             if (!isVirtual) {
                                 externalCount++
                             }
@@ -128,12 +132,16 @@ class MainActivity: FlutterActivity() {
             val displays = displayManager.displays
             for (display in displays) {
                 if (display.displayId != Display.DEFAULT_DISPLAY) {
-                    val type = display.type
                     val name = display.name.lowercase()
-                    if (type == Display.TYPE_VIRTUAL || 
-                        name.contains("virtual") || 
+                    val displayStr = display.toString().lowercase()
+                    if (name.contains("virtual") || 
                         name.contains("record") || 
-                        name.contains("capture")) {
+                        name.contains("capture") ||
+                        name.contains("overlay") ||
+                        name.contains("multiple-display") ||
+                        displayStr.contains("virtual") ||
+                        displayStr.contains("type_virtual") ||
+                        displayStr.contains("type=virtual")) {
                         return true
                     }
                 }
