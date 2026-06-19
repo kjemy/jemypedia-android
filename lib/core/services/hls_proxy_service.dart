@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'wordpress_service.dart';
 
 /// A local HTTP proxy server that intercepts ALL HLS requests and injects
 /// the required security headers (x-app-token, Referer, etc.) into each one.
@@ -78,11 +79,21 @@ class HlsProxyService {
     }
 
     try {
+      Uri finalTargetUri = targetUri;
+
+      // If the player is requesting the encryption key, dynamically fetch a one-time token
+      if (rawUrl.toLowerCase().contains('.key')) {
+        final token = await WordPressService().generateVideoToken();
+        if (token != null) {
+          finalTargetUri = Uri.parse('${WordPressService.domain}/video_key.php?token=$token');
+        }
+      }
+
       // Create HTTP client to fetch the real resource
       final client = HttpClient();
       client.userAgent = _userAgent;
 
-      final proxyReq = await client.getUrl(targetUri);
+      final proxyReq = await client.getUrl(finalTargetUri);
 
       // Inject ALL security headers into every upstream request
       proxyReq.headers.set('Referer', _referer);

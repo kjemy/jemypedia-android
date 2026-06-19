@@ -566,4 +566,36 @@ class WordPressService {
       return [];
     }
   }
+
+  // ─── Security Tokens ───────────────────────────────────────────
+  Future<String?> generateVideoToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('user_email');
+    final password = prefs.getString('user_password');
+    final hwid = await getDeviceId();
+
+    if (email == null || password == null) return null;
+
+    try {
+      final response = await _client.post(
+        Uri.parse('$domain/generate_key_token.php'),
+        body: {
+          'email': email,
+          'password': password,
+          'device_id': hwid,
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['token'];
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error generating video token: $e');
+      return null;
+    }
+  }
 }
