@@ -93,7 +93,8 @@ class HlsProxyService {
         if (_userEmail != null && _userPassword != null) {
           final token = await WordPressService().generateVideoToken(_userEmail!, _userPassword!);
           if (token != null) {
-            finalTargetUri = Uri.parse('${WordPressService.baseUrl}/video-token/serve?token=$token');
+            final keyFilename = Uri.parse(rawUrl).pathSegments.last;
+            finalTargetUri = Uri.parse('${WordPressService.baseUrl}/video-token/serve?token=$token&file=$keyFilename');
           }
         }
       }
