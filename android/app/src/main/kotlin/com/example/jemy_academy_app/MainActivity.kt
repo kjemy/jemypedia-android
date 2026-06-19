@@ -23,10 +23,21 @@ class MainActivity: FlutterActivity() {
                     var externalCount = 0
                     for (display in displays) {
                         if (display.displayId != Display.DEFAULT_DISPLAY) {
-                            externalCount++
+                            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) display.type else -1
+                            val name = display.name.lowercase()
+                            val isVirtual = (type == Display.TYPE_VIRTUAL || 
+                                             name.contains("virtual") || 
+                                             name.contains("record") || 
+                                             name.contains("capture"))
+                            if (!isVirtual) {
+                                externalCount++
+                            }
                         }
                     }
                     result.success(externalCount)
+                }
+                "isScreenRecording" -> {
+                    result.success(isScreenRecordingActive())
                 }
                 "isRooted" -> {
                     result.success(isDeviceRooted())
@@ -109,6 +120,26 @@ class MainActivity: FlutterActivity() {
         } catch (e: Exception) {
             return true 
         }
+    }
+
+    private fun isScreenRecordingActive(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val displays = displayManager.displays
+            for (display in displays) {
+                if (display.displayId != Display.DEFAULT_DISPLAY) {
+                    val type = display.type
+                    val name = display.name.lowercase()
+                    if (type == Display.TYPE_VIRTUAL || 
+                        name.contains("virtual") || 
+                        name.contains("record") || 
+                        name.contains("capture")) {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
     }
 }
 

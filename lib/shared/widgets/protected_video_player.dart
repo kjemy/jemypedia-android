@@ -184,6 +184,10 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                     'isOk': !secService.isBlacklistedProcessRunning,
                   },
                   {
+                    'text': 'إيقاف تسجيل أو تصوير الشاشة (Screen Recording)',
+                    'isOk': !secService.isScreenRecording,
+                  },
+                  {
                     'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء)',
                     'isOk': !(secService.isRooted || secService.isEmulator || secService.isDebuggerConnected),
                   },

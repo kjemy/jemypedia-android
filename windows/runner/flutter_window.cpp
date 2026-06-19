@@ -167,7 +167,15 @@ bool IsBlacklistedProcessRunning() {
         "camtasia.exe", "camrecorder.exe",
         "bandicam.exe", "action.exe",
         "fraps.exe", "xsplit.core.exe",
-        "soundforge.exe", "reaper.exe"
+        "soundforge.exe", "reaper.exe",
+        "snippingtool.exe", "screenclippinghost.exe", "psr.exe",
+        "gamebar.exe", "gamebarftserver.exe", "gamepanel.exe", "gamebarpresencewriter.exe",
+        "sharex.exe", "lightshot.exe", "greenshot.exe", "loom.exe",
+        "zoom.exe", "teams.exe", "msteams.exe", "skype.exe",
+        "teamviewer.exe", "anydesk.exe", "discord.exe",
+        "snagit32.exe", "snagit64.exe", "snagiteditor.exe",
+        "filmora.exe", "icecreamscreenrecorder.exe", "tinytake.exe",
+        "nvsphelper64.exe", "nvidia share.exe"
     };
 
     for (i = 0; i < cProcesses; i++) {
@@ -302,6 +310,8 @@ bool FlutterWindow::OnCreate() {
           result->Success(flutter::EncodableValue(false));
         } else if (call.method_name() == "isEmulator") {
           result->Success(flutter::EncodableValue(IsVirtualMachine()));
+        } else if (call.method_name() == "isScreenRecording") {
+          result->Success(flutter::EncodableValue(IsBlacklistedProcessRunning()));
         } else if (call.method_name() == "isDebuggerConnected") {
           result->Success(flutter::EncodableValue(IsDebuggerAttached()));
         } else if (call.method_name() == "isBlacklistedProcessRunning") {

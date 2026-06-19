@@ -108,6 +108,10 @@ class ProtectedScreenWrapper extends StatelessWidget {
                                   'isOk': !securityService.isBlacklistedProcessRunning,
                                 },
                                 {
+                                  'text': 'إيقاف تسجيل أو تصوير الشاشة (Screen Recording)',
+                                  'isOk': !securityService.isScreenRecording,
+                                },
+                                {
                                   'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء، إلخ)',
                                   'isOk': !(securityService.isRooted || securityService.isEmulator || securityService.isDebuggerConnected),
                                 },

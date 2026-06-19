@@ -10,7 +10,7 @@ class SecurityService extends ChangeNotifier {
   bool _isRooted = false;
   bool _isEmulator = false;
   bool _isDebuggerConnected = false;
-  final bool _isScreenRecording = false; // Placeholder for future Android 14 callback
+  bool _isScreenRecording = false;
   bool _isBluetoothEnabled = false;
   bool _isWiredHeadsetOn = true;
   bool _isBlacklistedProcessRunning = false;
@@ -76,9 +76,16 @@ class SecurityService extends ChangeNotifier {
       bool blacklistedProcess = false;
       try { blacklistedProcess = await _channel.invokeMethod('isBlacklistedProcessRunning') ?? false; } catch (_) {}
 
+      bool screenRecording = false;
+      try { screenRecording = await _channel.invokeMethod('isScreenRecording') ?? false; } catch (_) {}
+
       bool changed = false;
       if (_isExternalDisplayConnected != displaysConnected) {
         _isExternalDisplayConnected = displaysConnected;
+        changed = true;
+      }
+      if (_isScreenRecording != screenRecording) {
+        _isScreenRecording = screenRecording;
         changed = true;
       }
       if (_isRooted != rooted) {
