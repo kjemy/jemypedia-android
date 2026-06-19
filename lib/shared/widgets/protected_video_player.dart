@@ -188,10 +188,6 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
               builder: (dialogCtx, secService, _) {
                 final checks = [
                   {
-                    'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت',
-                    'isOk': !secService.isBlacklistedProcessRunning,
-                  },
-                  {
                     'text':
                         'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء)',
                     'isOk': !(secService.isRooted ||

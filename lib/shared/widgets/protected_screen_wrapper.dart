@@ -92,10 +92,6 @@ class ProtectedScreenWrapper extends StatelessWidget {
                               const SizedBox(height: 12),
                               ...[
                                 {
-                                  'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت (مثل OBS، تسجيل الصوت، إلخ)',
-                                  'isOk': !securityService.isBlacklistedProcessRunning,
-                                },
-                                {
                                   'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء، إلخ)',
                                   'isOk': !(securityService.isRooted || securityService.isEmulator || securityService.isDebuggerConnected),
                                 },
