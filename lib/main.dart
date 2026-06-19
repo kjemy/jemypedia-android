@@ -22,7 +22,7 @@ import 'package:jemypedia_app/core/services/security_service.dart';
 import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
 import 'package:jemypedia_app/core/services/hls_proxy_service.dart';
 
-import 'package:safe_device/safe_device.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
 import 'dart:io';
@@ -53,8 +53,11 @@ void main() async {
     // تفعيل حماية الأندرويد ضد الروت والمحاكيات
     if (Platform.isAndroid) {
       try {
-        bool isJailBroken = await SafeDevice.isJailBroken;
-        bool isRealDevice = await SafeDevice.isRealDevice;
+        bool isJailBroken = await FlutterJailbreakDetection.jailbroken;
+        
+        DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        bool isRealDevice = androidInfo.isPhysicalDevice;
         
         if (isJailBroken || !isRealDevice) {
           runApp(
