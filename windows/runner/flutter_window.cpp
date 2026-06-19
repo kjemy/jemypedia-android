@@ -309,7 +309,8 @@ bool FlutterWindow::OnCreate() {
         } else if (call.method_name() == "isBluetoothEnabled") {
           result->Success(flutter::EncodableValue(IsBluetoothRadioEnabled()));
         } else if (call.method_name() == "isWiredHeadsetOn") {
-          result->Success(flutter::EncodableValue(IsWiredHeadsetConnected()));
+          // Wired headset check is only enforced on Android, not on Windows
+          result->Success(flutter::EncodableValue(true));
         } else {
           result->NotImplemented();
         }
