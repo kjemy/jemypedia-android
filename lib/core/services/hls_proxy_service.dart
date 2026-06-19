@@ -85,7 +85,7 @@ class HlsProxyService {
       if (rawUrl.toLowerCase().contains('.key')) {
         final token = await WordPressService().generateVideoToken();
         if (token != null) {
-          finalTargetUri = Uri.parse('${WordPressService.domain}/video_key.php?token=$token');
+          finalTargetUri = Uri.parse('${WordPressService.baseUrl}/video-token/serve?token=$token');
         }
       }
 

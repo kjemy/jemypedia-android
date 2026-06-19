@@ -578,7 +578,7 @@ class WordPressService {
 
     try {
       final response = await _client.post(
-        Uri.parse('$domain/generate_key_token.php'),
+        Uri.parse('$baseUrl/video-token/generate'),
         body: {
           'email': email,
           'password': password,
