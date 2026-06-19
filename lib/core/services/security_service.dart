@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'native_security_service.dart';
@@ -15,10 +17,12 @@ class SecurityService extends ChangeNotifier {
   bool _isWiredHeadsetOn = true;
   bool _isBlacklistedProcessRunning = false;
 
-  // Debounce: external display must be detected for 2 consecutive polls before triggering
+  // Debounce: external display must be detected for 2 consecutive polls (10s) before triggering
   int _externalDisplayConfirmCount = 0;
-  static const int _requiredConfirmCount = 2; // 2 × 5s = 10 seconds debounce
+  static const int _requiredConfirmCount = 2;
 
+  /// The app will CLOSE immediately when a recording app is detected.
+  /// Everything else just shows the red warning screen.
   bool get isSecurityCompromised =>
       _isExternalDisplayConnected ||
       _isRooted ||
@@ -42,15 +46,23 @@ class SecurityService extends ChangeNotifier {
   }
 
   void _startPolling() {
-    // Poll every 5 seconds (slightly relaxed to reduce CPU load)
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       await _checkSecurity();
     });
   }
 
+  /// Kill the app immediately — used when recording software is detected.
+  Future<void> _killApp() async {
+    try {
+      await _channel.invokeMethod('stopApp');
+    } catch (_) {}
+    // Dart-level force exit as backup
+    exit(0);
+  }
+
   Future<void> _checkSecurity() async {
     try {
-      // 1. External Display Count — with debounce to avoid transient virtual displays
+      // ── 1. External Display (HDMI / Cast / Mirror) ─────────────────────────
       int externalCount = 0;
       try {
         externalCount =
@@ -61,43 +73,41 @@ class SecurityService extends ChangeNotifier {
       if (rawDisplayDetected) {
         _externalDisplayConfirmCount++;
       } else {
-        // Reset counter — display went away, no threat
         _externalDisplayConfirmCount = 0;
       }
-      // Only mark as external if detected consistently across multiple polls
       final bool displaysConfirmed =
           _externalDisplayConfirmCount >= _requiredConfirmCount;
 
-      // 2. Root/Jailbreak Check
+      // ── 2. Root / Jailbreak ────────────────────────────────────────────────
       final bool rooted = await _channel.invokeMethod('isRooted') ?? false;
 
-      // 3. Emulator Check
+      // ── 3. Emulator ────────────────────────────────────────────────────────
       final bool emulator = await _channel.invokeMethod('isEmulator') ?? false;
 
-      // 4. Platform Debugger Check
+      // ── 4. Debugger (platform + native FFI) ───────────────────────────────
       final bool debuggerPlatform =
           await _channel.invokeMethod('isDebuggerConnected') ?? false;
-
-      // 5. C++ Native FFI Debugger Check (Windows only — safe on Android too)
       final bool debuggerNative = NativeSecurityService.checkDebugger();
-
       final bool hasDebugger = debuggerPlatform || debuggerNative;
 
-      // 6. Screen-recording / blacklisted process (OBS, Bandicam, Audacity, etc.)
-      //    Uses platform-specific logic: on Windows it checks process names;
-      //    on Android it checks MediaProjection / virtual display names.
+      // ── 5. Screen / Audio Recording app running? ───────────────────────────
+      //    On Windows : scans running process names against a blacklist.
+      //    On Android : isBlacklistedProcessRunning always returns false because
+      //                 audio capture is blocked at OS level via allowAudioPlaybackCapture=false.
       bool blacklistedProcess = false;
       try {
         blacklistedProcess =
             await _channel.invokeMethod('isBlacklistedProcessRunning') ?? false;
       } catch (_) {}
 
+      // Android only — MediaProjection / virtual display recording detection
       bool screenRecording = false;
       try {
         screenRecording =
             await _channel.invokeMethod('isScreenRecording') ?? false;
       } catch (_) {}
 
+      // ── 6. Bluetooth / Wired (informational only, not used in compromise) ──
       bool bluetooth = false;
       try {
         bluetooth = await _channel.invokeMethod('isBluetoothEnabled') ?? false;
@@ -108,6 +118,16 @@ class SecurityService extends ChangeNotifier {
         wiredHeadset = await _channel.invokeMethod('isWiredHeadsetOn') ?? true;
       } catch (_) {}
 
+      // ── 7. IMMEDIATE KILL: recording app detected ──────────────────────────
+      //    We close the app right away — no dialog, no warning, just gone.
+      if (blacklistedProcess && !_isBlacklistedProcessRunning) {
+        debugPrint(
+            '[Security] Recording app detected — closing app immediately.');
+        await _killApp();
+        return;
+      }
+
+      // ── 8. Update state and notify UI ─────────────────────────────────────
       bool changed = false;
 
       if (_isExternalDisplayConnected != displaysConfirmed) {

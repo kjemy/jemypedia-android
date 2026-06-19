@@ -162,20 +162,29 @@ bool IsBlacklistedProcessRunning() {
 
     cProcesses = cbNeeded / sizeof(DWORD);
     // ONLY dedicated screen/audio recording tools — NOT communication apps or OS components
-    // Communication apps (Discord, Teams, Zoom, Skype) are excluded: they don't capture
+    // Communication apps (Discord, Teams, Skype) are excluded: they don't capture
     // protected audio by default and their presence should NOT block legitimate users.
-    // Windows GameBar is also excluded as it is a system component that runs in the background.
+    // Windows GameBar is also excluded as it is a system component.
     std::vector<std::string> blacklist = {
-        // Screen + audio recorders
+        // Screen + audio/video recorders
         "obs64.exe", "obs32.exe", "obs-browser-page.exe",
-        "audacity.exe", "audition.exe",
+        "audacity.exe",
+        "audition.exe",              // Adobe Audition
+        "adobe audition.exe",
         "camtasia.exe", "camrecorder.exe", "camtasiastudio.exe",
         "bandicam.exe", "bdcam.exe",
-        "action.exe",          // Mirillis Action!
+        "action.exe",                // Mirillis Action!
         "fraps.exe",
         "xsplit.core.exe", "xsplitbroadcaster.exe", "xsplitgamecaster.exe",
         "soundforge.exe", "soundforgepro.exe",
         "reaper.exe",
+        "fl.exe", "flstudio.exe",    // FL Studio (Fruity Loops)
+        "ableton live.exe", "ableton.exe",  // Ableton Live
+        "logic pro.exe",
+        "cubase.exe", "cubasele.exe",
+        "nuendo.exe",
+        "protools.exe", "pro tools.exe",
+        "studio one.exe",
         "sharex.exe",
         "snagit32.exe", "snagit64.exe", "snagiteditor.exe",
         "filmora.exe", "filmorascrn.exe",
@@ -187,7 +196,9 @@ bool IsBlacklistedProcessRunning() {
         "d3dgear.exe",
         "dxtory.exe",
         "playclaw.exe",
-        "nvsphelper64.exe"     // NVIDIA ShadowPlay helper
+        "zoom.exe",                  // Zoom (can record audio sessions)
+        "zoomopener.exe",
+        "nvsphelper64.exe"           // NVIDIA ShadowPlay helper
     };
 
     for (i = 0; i < cProcesses; i++) {
@@ -310,11 +321,9 @@ bool FlutterWindow::OnCreate() {
       &flutter::StandardMethodCodec::GetInstance());
 
   channel.SetMethodCallHandler(
-      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+      [hwnd = GetHandle()](const flutter::MethodCall<flutter::EncodableValue>& call,
          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
         if (call.method_name() == "getExternalDisplaysCount") {
-          // GetPhysicalDisplayCount uses QueryDisplayConfig (CCD API) which correctly
-          // detects monitors in clone mode, unlike the old EnumDisplayMonitors approach
           int totalPhysical = GetPhysicalDisplayCount();
           int externalCount = totalPhysical > 1 ? totalPhysical - 1 : 0;
           result->Success(flutter::EncodableValue(externalCount));
@@ -331,8 +340,11 @@ bool FlutterWindow::OnCreate() {
         } else if (call.method_name() == "isBluetoothEnabled") {
           result->Success(flutter::EncodableValue(IsBluetoothRadioEnabled()));
         } else if (call.method_name() == "isWiredHeadsetOn") {
-          // Wired headset check is only enforced on Android, not on Windows
           result->Success(flutter::EncodableValue(true));
+        } else if (call.method_name() == "stopApp") {
+          // Close the application window immediately
+          result->Success(flutter::EncodableValue(true));
+          PostMessage(hwnd, WM_CLOSE, 0, 0);
         } else {
           result->NotImplemented();
         }
