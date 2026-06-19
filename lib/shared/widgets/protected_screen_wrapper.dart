@@ -92,24 +92,12 @@ class ProtectedScreenWrapper extends StatelessWidget {
                               const SizedBox(height: 12),
                               ...[
                                 {
-                                  'text': 'توصيل سماعات الأذن السلكية (مطلوب سماعة سلكية)',
-                                  'isOk': securityService.isWiredHeadsetOn,
-                                },
-                                {
-                                  'text': 'إيقاف تشغيل البلوتوث (Bluetooth)',
-                                  'isOk': !securityService.isBluetoothEnabled,
-                                },
-                                {
                                   'text': 'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
                                   'isOk': !securityService.isExternalDisplayConnected,
                                 },
                                 {
                                   'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت (مثل OBS، تسجيل الصوت، إلخ)',
                                   'isOk': !securityService.isBlacklistedProcessRunning,
-                                },
-                                {
-                                  'text': 'إيقاف تسجيل أو تصوير الشاشة (Screen Recording)',
-                                  'isOk': !securityService.isScreenRecording,
                                 },
                                 {
                                   'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء، إلخ)',

@@ -17,12 +17,9 @@ class SecurityService extends ChangeNotifier {
 
   bool get isSecurityCompromised => 
       _isExternalDisplayConnected || 
-      _isScreenRecording || 
       _isRooted || 
       _isEmulator || 
       _isDebuggerConnected ||
-      _isBluetoothEnabled ||
-      !_isWiredHeadsetOn ||
       _isBlacklistedProcessRunning;
 
   bool get isExternalDisplayConnected => _isExternalDisplayConnected;

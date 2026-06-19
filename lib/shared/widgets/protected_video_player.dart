@@ -188,14 +188,6 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
               builder: (dialogCtx, secService, _) {
                 final checks = [
                   {
-                    'text': 'توصيل سماعات الأذن السلكية (مطلوب سماعة سلكية)',
-                    'isOk': secService.isWiredHeadsetOn,
-                  },
-                  {
-                    'text': 'إيقاف تشغيل البلوتوث (Bluetooth)',
-                    'isOk': !secService.isBluetoothEnabled,
-                  },
-                  {
                     'text':
                         'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
                     'isOk': !secService.isExternalDisplayConnected,
@@ -203,10 +195,6 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                   {
                     'text': 'إيقاف أي برنامج لتسجيل الشاشة أو الصوت',
                     'isOk': !secService.isBlacklistedProcessRunning,
-                  },
-                  {
-                    'text': 'إيقاف تسجيل أو تصوير الشاشة (Screen Recording)',
-                    'isOk': !secService.isScreenRecording,
                   },
                   {
                     'text':
