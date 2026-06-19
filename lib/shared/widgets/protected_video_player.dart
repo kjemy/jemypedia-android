@@ -62,7 +62,7 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
     _startSecurityGuard();
     _player = Player();
     _controller = VideoController(_player);
-    
+
     _player.stream.position.listen((position) {
       final duration = _player.state.duration;
       if (duration.inSeconds > 0 && !_hasMarkedCompleted) {
@@ -87,76 +87,87 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
 
   void _startWatchTimer() {
     if (widget.lessonId == null) return;
-    
+
     _watchTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
       if (!_isInitialized || !_player.state.playing) return;
-      
+
       final currentPos = _player.state.position.inSeconds.toDouble();
       if (currentPos > _lastLoggedPosition) {
         final deltaMinutes = (currentPos - _lastLoggedPosition) / 60.0;
         _lastLoggedPosition = currentPos;
-        
-        try {
-          final wpService = Provider.of<WordPressService>(context, listen: false);
-          final result = await wpService.logWatchTime(widget.lessonId!, deltaMinutes);
-          
-          final code = result['code'] as String? ?? '';
-          final isLimitExceeded = result['success'] == false && 
-              (code == 'limit_exceeded' || code.contains('limit'));
-          
-          if (isLimitExceeded) {
-            timer.cancel();
-            _player.pause();
-            if (mounted) {
-              final msg = result['message'] as String? ?? 
-                  'لقد تجاوزت الحد الأقصى للمشاهدة المسموح به لهذا الدرس.';
-              await showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: const Color(0xFF1E2030),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Row(
-                    children: [
-                      Icon(Icons.timer_off_rounded, color: Colors.orange, size: 28),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'انتهى وقت المشاهدة',
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.right,
+
+        if (widget.lessonId != null) {
+          try {
+            final wpService =
+                Provider.of<WordPressService>(context, listen: false);
+            final result =
+                await wpService.logWatchTime(widget.lessonId!, deltaMinutes);
+
+            final code = result['code'] as String? ?? '';
+            final isLimitExceeded = result['success'] == false &&
+                (code == 'limit_exceeded' || code.contains('limit'));
+
+            if (isLimitExceeded) {
+              timer.cancel();
+              _player.pause();
+              if (mounted) {
+                final msg = result['message'] as String? ??
+                    'لقد تجاوزت الحد الأقصى للمشاهدة المسموح به لهذا الدرس.';
+                await showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: const Color(0xFF1E2030),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    title: const Row(
+                      children: [
+                        Icon(Icons.timer_off_rounded,
+                            color: Colors.orange, size: 28),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'انتهى وقت المشاهدة',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: Text(
+                      msg,
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 14, height: 1.6),
+                      textAlign: TextAlign.right,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          if (mounted) Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'حسناً، خروج',
+                          style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
                   ),
-                  content: Text(
-                    msg,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
-                    textAlign: TextAlign.right,
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        if (mounted) Navigator.of(context).pop();
-                      },
-                      child: const Text(
-                        'حسناً، خروج',
-                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+                );
+              }
             }
+          } catch (e) {
+            debugPrint('Failed to log watch time: $e');
           }
-        } catch (e) {
-          debugPrint('Failed to log watch time: $e');
         }
       }
     });
   }
-
 
   bool _isSecurityDialogShowing = false;
 
@@ -185,7 +196,8 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                     'isOk': !secService.isBluetoothEnabled,
                   },
                   {
-                    'text': 'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
+                    'text':
+                        'إيقاف الكاست، الميرور، وأي اتصال بأجهزة أو شاشات خارجية',
                     'isOk': !secService.isExternalDisplayConnected,
                   },
                   {
@@ -197,8 +209,11 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                     'isOk': !secService.isScreenRecording,
                   },
                   {
-                    'text': 'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء)',
-                    'isOk': !(secService.isRooted || secService.isEmulator || secService.isDebuggerConnected),
+                    'text':
+                        'إغلاق أي أداة أو تطبيق قد يتعارض مع عمل التطبيق (محاكي، تصحيح أخطاء)',
+                    'isOk': !(secService.isRooted ||
+                        secService.isEmulator ||
+                        secService.isDebuggerConnected),
                   },
                 ];
 
@@ -211,7 +226,8 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
 
                 return AlertDialog(
                   backgroundColor: const Color(0xFF1E2030),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                   title: Row(
                     textDirection: TextDirection.rtl,
                     children: [
@@ -220,7 +236,10 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                       Expanded(
                         child: Text(
                           'تم اكتشاف اشتباه في تحايل على التطبيق',
-                          style: TextStyle(color: bloodyRed, fontSize: 15, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: bloodyRed,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
                           textAlign: TextAlign.right,
                         ),
                       ),
@@ -234,7 +253,10 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                         const Text(
                           'لضمان استمرار عمل التطبيق، يُرجى القيام بما يلي:',
                           textDirection: TextDirection.rtl,
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),
                         ...checks.map((check) {
@@ -246,7 +268,9 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Icon(
-                                  isOk ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                  isOk
+                                      ? Icons.check_circle_rounded
+                                      : Icons.cancel_rounded,
                                   color: isOk ? Colors.greenAccent : bloodyRed,
                                   size: 18,
                                 ),
@@ -256,9 +280,12 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                                     check['text'] as String,
                                     textDirection: TextDirection.rtl,
                                     style: TextStyle(
-                                      color: isOk ? Colors.white70 : Colors.white,
+                                      color:
+                                          isOk ? Colors.white70 : Colors.white,
                                       fontSize: 12,
-                                      fontWeight: isOk ? FontWeight.normal : FontWeight.bold,
+                                      fontWeight: isOk
+                                          ? FontWeight.normal
+                                          : FontWeight.bold,
                                     ),
                                   ),
                                 ),
@@ -273,13 +300,17 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                           textDirection: TextDirection.rtl,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.gavel_rounded, color: bloodyRed.withOpacity(0.8), size: 18),
+                            Icon(Icons.gavel_rounded,
+                                color: bloodyRed.withOpacity(0.8), size: 18),
                             const SizedBox(width: 8),
                             const Expanded(
                               child: Text(
                                 'تنبيه قانوني:\nأي محاولة للتحايل على هذا التطبيق أو انتهاك حقوق المحتوى، بأي شكل من الأشكال، تُعدّ جريمة يُعاقب عليها القانون. وقد تم تسجيل هذه المحاولة وحفظها.',
                                 textDirection: TextDirection.rtl,
-                                style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.5),
+                                style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 11,
+                                    height: 1.5),
                               ),
                             ),
                           ],
@@ -295,7 +326,8 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
                       },
                       child: Text(
                         'خروج من الدرس',
-                        style: TextStyle(color: bloodyRed, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: bloodyRed, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -305,9 +337,9 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
           ),
         );
         _isSecurityDialogShowing = false;
-        
+
         if (_securityService.isSecurityCompromised && mounted) {
-           Navigator.of(context).pop();
+          Navigator.of(context).pop();
         }
       }
     }
@@ -342,20 +374,19 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
         hlsProxy.setKeyToken(widget.keyToken);
         debugPrint("Key Token set in proxy: ${widget.keyToken}");
       }
-      
+
       // Inject credentials for one-time video key tokens
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.userEmail != null && authProvider.userPassword != null) {
-        hlsProxy.setCredentials(authProvider.userEmail!, authProvider.userPassword!);
+        hlsProxy.setCredentials(
+            authProvider.userEmail!, authProvider.userPassword!);
       }
 
       // Route the video URL through our local HLS proxy.
       // The proxy injects ALL security headers (x-app-token, x-key-token, Referer, etc.)
       // into EVERY request: the .m3u8 manifest, the .key file, and all .ts segments.
       // This is the ONLY reliable way to pass headers for AES-128 encrypted HLS.
-      final proxyUrl = hlsProxy.isRunning
-          ? hlsProxy.proxyUrl(rawUrl)
-          : rawUrl;
+      final proxyUrl = hlsProxy.isRunning ? hlsProxy.proxyUrl(rawUrl) : rawUrl;
 
       debugPrint("Proxy URL: $proxyUrl");
 
@@ -379,12 +410,14 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
   void _startSecurityGuard() {
     if (!kIsWeb && Platform.isAndroid) {
       try {
-        _securitySubscription = _securityEvents.receiveBroadcastStream().listen((event) {
+        _securitySubscription =
+            _securityEvents.receiveBroadcastStream().listen((event) {
           if (event is Map) {
             final type = event['type'] as String?;
             if (type == 'screen_recording_detected' && !_isRecordingDetected) {
               _onRecordingDetected();
-            } else if (type == 'screen_recording_stopped' && _isRecordingDetected) {
+            } else if (type == 'screen_recording_stopped' &&
+                _isRecordingDetected) {
               _onRecordingStopped();
             }
           }
@@ -434,21 +467,30 @@ class _ProtectedVideoPlayerState extends State<ProtectedVideoPlayer> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 64),
+                const Icon(Icons.error_outline_rounded,
+                    color: Colors.redAccent, size: 64),
                 const SizedBox(height: 16),
                 const Text('Playback Error',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18)),
                 const SizedBox(height: 8),
                 Text(_errorDetail,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    style:
+                        const TextStyle(color: Colors.white54, fontSize: 12)),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() { _hasError = false; _isInitialized = false; });
+                    setState(() {
+                      _hasError = false;
+                      _isInitialized = false;
+                    });
                     _initPlayer();
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary),
                   child: const Text('Retry Loading'),
                 )
               ],
@@ -565,12 +607,14 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
   void _startSecurityGuard() {
     if (!kIsWeb && Platform.isAndroid) {
       try {
-        _securitySubscription = _securityEvents.receiveBroadcastStream().listen((event) {
+        _securitySubscription =
+            _securityEvents.receiveBroadcastStream().listen((event) {
           if (event is Map) {
             final type = event['type'] as String?;
             if (type == 'screen_recording_detected' && !_isRecordingDetected) {
               _onRecordingDetected();
-            } else if (type == 'screen_recording_stopped' && _isRecordingDetected) {
+            } else if (type == 'screen_recording_stopped' &&
+                _isRecordingDetected) {
               _onRecordingStopped();
             }
           }
@@ -659,7 +703,8 @@ class _DynamicWatermarkWidget extends StatefulWidget {
   });
 
   @override
-  State<_DynamicWatermarkWidget> createState() => _DynamicWatermarkWidgetState();
+  State<_DynamicWatermarkWidget> createState() =>
+      _DynamicWatermarkWidgetState();
 }
 
 class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
@@ -669,7 +714,7 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
 
   Alignment _align1 = Alignment.topLeft;
   Alignment _align2 = Alignment.bottomRight;
-  
+
   double _opacity1 = 0.35;
   double _opacity2 = 0.40;
 
@@ -778,19 +823,23 @@ class _DynamicWatermarkWidgetState extends State<_DynamicWatermarkWidget> {
                 ),
               ),
             // Text watermark
-            if (widget.watermarkText != null && widget.watermarkText!.isNotEmpty) ...[
+            if (widget.watermarkText != null &&
+                widget.watermarkText!.isNotEmpty) ...[
               if (widget.watermarkImageUrl != null) const SizedBox(height: 6),
               Text(
                 widget.watermarkText!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: color,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w900,
-                  shadows: [
-                    Shadow(color: color == Colors.black ? Colors.white54 : Colors.black54, blurRadius: 4)
-                  ]
-                ),
+                    color: color,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w900,
+                    shadows: [
+                      Shadow(
+                          color: color == Colors.black
+                              ? Colors.white54
+                              : Colors.black54,
+                          blurRadius: 4)
+                    ]),
               ),
             ],
           ],
