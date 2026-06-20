@@ -28,7 +28,8 @@ class SecurityService extends ChangeNotifier {
       _isRooted ||
       _isEmulator ||
       _isDebuggerConnected ||
-      _isBlacklistedProcessRunning;
+      _isBlacklistedProcessRunning ||
+      _isBluetoothEnabled;
 
   bool get isExternalDisplayConnected => _isExternalDisplayConnected;
   bool get isRooted => _isRooted;
