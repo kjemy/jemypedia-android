@@ -20,6 +20,7 @@ class CourseModel {
   double progress;
   final List<LessonModel> lessons;
   final List<QuizModel> quizzes; // Embedded quizzes
+  final List<Map<String, dynamic>> pricingPlans;
 
   CourseModel({
     required this.id,
@@ -40,6 +41,7 @@ class CourseModel {
     this.progress = 0.0,
     this.lessons = const [],
     this.quizzes = const [],
+    this.pricingPlans = const [],
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,11 @@ class CourseModel {
     var quizzesList = <QuizModel>[];
     if (json['quizzes'] != null) {
       quizzesList = (json['quizzes'] as List).map((i) => QuizModel.fromJson(i)).toList();
+    }
+
+    var pricingPlansList = <Map<String, dynamic>>[];
+    if (json['pricing_plans'] != null && json['pricing_plans'] is List) {
+      pricingPlansList = List<Map<String, dynamic>>.from(json['pricing_plans']);
     }
 
     return CourseModel(
@@ -72,6 +79,7 @@ class CourseModel {
       progress: (json['progress'] ?? 0).toDouble(),
       lessons: lessonsList,
       quizzes: quizzesList,
+      pricingPlans: pricingPlansList,
     );
   }
 

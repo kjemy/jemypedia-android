@@ -14,7 +14,8 @@ import '../../../core/utils/hwid_service.dart';
 import '../models/course_model.dart';
 import '../../../core/services/wordpress_service.dart';
 import '../../quizzes/models/quiz_model.dart';
-import '../../quizzes/ui/quiz_screen.dart';
+import 'package:jemypedia_app/features/quizzes/ui/quiz_screen.dart';
+import 'package:jemypedia_app/features/subscriptions/screens/checkout_screen.dart';
 import '../../materials/models/material_model.dart';
 import '../../materials/ui/materials_section.dart';
 import '../../../core/localization/app_localizations.dart';
@@ -281,12 +282,27 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         content: Text(locale == 'ar' ? 'هذا الدرس يتطلب اشتراكاً للمشاهدة. يرجى الاشتراك لفتح الكورس بالكامل.' : 'This lesson requires a subscription to view. Please subscribe to unlock the full course.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(locale == 'ar' ? 'إلغاء' : 'Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _launchWooCommerceCheckout();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                String price = (widget.course.price['sale_price'] ?? widget.course.price['regular_price']).toString();
+                String? wooId;
+                if (widget.course.pricingPlans.isNotEmpty) {
+                  price = (widget.course.pricingPlans[0]['sale_price'] ?? widget.course.pricingPlans[0]['regular_price']).toString();
+                  wooId = widget.course.pricingPlans[0]['id']?.toString();
+                }
+                
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => CheckoutScreen(
+                    courseId: widget.course.id,
+                    courseTitle: widget.course.getLocalizedTitle(locale),
+                    price: price,
+                    wooId: wooId,
+                  )),
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
             child: Text(locale == 'ar' ? 'اشترك الآن' : 'Subscribe Now'),
           ),
         ],
@@ -354,6 +370,92 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     builder: (context, provider, child) {
                       bool isUnlocked = provider.unlockedCourses.contains(widget.course.id) || widget.course.isFree;
                       return _buildQuizzes(locale, textColor, isUnlocked, true);
+                    },
+                  ),
+                  
+                  // Subscription Packages (if not unlocked)
+                  Consumer<CoursesProvider>(
+                    builder: (context, provider, child) {
+                      bool isUnlocked = provider.unlockedCourses.contains(widget.course.id) || widget.course.isFree;
+                      if (isUnlocked) return const SizedBox.shrink();
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(locale == 'ar' ? 'باقات الاشتراك' : 'Subscription Packages', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
+                          const SizedBox(height: 15),
+                          if (widget.course.pricingPlans.isNotEmpty)
+                            ...widget.course.pricingPlans.map((plan) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: GlassContainer(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(plan['title']?[locale] ?? plan['title']?['en'] ?? 'باقة', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                                          Text('${plan['access_period']?[locale] ?? ''} - ${plan['sale_price'] ?? plan['regular_price']} \$', style: const TextStyle(color: AppColors.accentNeon)),
+                                        ],
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => CheckoutScreen(
+                                            courseId: widget.course.id,
+                                            courseTitle: widget.course.getLocalizedTitle(locale),
+                                            price: (plan['sale_price'] ?? plan['regular_price']).toString(),
+                                            wooId: plan['id']?.toString(),
+                                          )),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                                      child: Text(locale == 'ar' ? 'اشترك' : 'Subscribe'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ))
+                          else
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: GlassContainer(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(locale == 'ar' ? 'الاشتراك الكامل' : 'Full Access', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                                          Text('${widget.course.price['sale_price'] ?? widget.course.price['regular_price']} \$', style: const TextStyle(color: AppColors.accentNeon)),
+                                        ],
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => CheckoutScreen(
+                                            courseId: widget.course.id,
+                                            courseTitle: widget.course.getLocalizedTitle(locale),
+                                            price: (widget.course.price['sale_price'] ?? widget.course.price['regular_price']).toString(),
+                                          )),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                                      child: Text(locale == 'ar' ? 'اشترك' : 'Subscribe'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 30),
+                        ],
+                      );
                     },
                   ),
                   
@@ -657,25 +759,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     }
     
     return Column(children: items);
-  }
-
-  Future<void> _launchWooCommerceCheckout() async {
-    final String productId = widget.course.wooProductId;
-    final Uri url = productId.isNotEmpty 
-        ? Uri.parse('https://www.jemypedia.com/?p=$productId')
-        : Uri.parse('https://www.jemypedia.com/shop');
-        
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
-        Provider.of<LocaleProvider>(context, listen: false).locale.languageCode == 'ar'
-          ? 'تعذر فتح رابط الاشتراك.'
-          : 'Could not open subscription link.'
-      )));
-      }
-    }
   }
 
   Widget _buildLessonItem(BuildContext context, String index, LessonModel lesson, String locale, bool isDark, bool isUnlocked) {

@@ -8,6 +8,7 @@ class AuthProvider with ChangeNotifier {
   String? _userPassword;
   String? _displayName;
   String? _omniSecretKey;
+  int? _userId;
   List<dynamic> _subscriptions = [];
 
   bool get isLoggedIn => _isLoggedIn;
@@ -15,6 +16,7 @@ class AuthProvider with ChangeNotifier {
   String? get userPassword => _userPassword;
   String? get displayName => _displayName;
   String? get omniSecretKey => _omniSecretKey;
+  int? get userId => _userId;
   List<dynamic> get subscriptions => _subscriptions;
 
   Future<void> login(String email, String password, {bool rememberMe = false, Map<String, dynamic>? userData}) async {
@@ -23,6 +25,8 @@ class AuthProvider with ChangeNotifier {
     _userPassword = password;
     
     if (userData != null) {
+      _userId = userData['id'] ?? userData['user_id'];
+      if (_userId is String) _userId = int.tryParse(_userId as String);
       _displayName = userData['display_name'];
       _omniSecretKey = userData['omni_secret_key'];
       _subscriptions = userData['subscriptions'] ?? [];

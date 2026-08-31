@@ -245,6 +245,62 @@ class WordPressService {
     }
   }
 
+  // Register - Send OTP
+  Future<Map<String, dynamic>> registerSendOtp(String email) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$domain/wp-json/jemy/v1/auth/register-send-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      ).timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, ...data};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Failed to send OTP'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
+  // Register - Verify & Create Account
+  Future<Map<String, dynamic>> register({
+    required String email,
+    required String otp,
+    required String password,
+    required String firstName,
+    required String lastName,
+    required String phone,
+    required String country,
+  }) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$domain/wp-json/jemy/v1/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+          'password': password,
+          'first_name': firstName,
+          'last_name': lastName,
+          'phone': phone,
+          'country': country,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, ...data};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Registration failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
   Future<Map<String, dynamic>?> checkUserStatus(String email, String password, String hwid) async {
     try {
       final response = await _client.post(
@@ -421,6 +477,65 @@ class WordPressService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  // Checkout API
+  Future<List<dynamic>> getGateways(int planId, {String? wooId}) async {
+    try {
+      final String query = wooId != null ? '?plan_id=$planId&woo_id=$wooId' : '?plan_id=$planId';
+      final response = await _client.get(
+        Uri.parse('$baseUrl/collection-checkout$query'),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['gateways'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> submitCheckout({
+    required int planId,
+    required String userId,
+    required String gateway,
+    required String txHash,
+    String? wooId,
+    String? network,
+    String? gasFee,
+    String? phoneNumber,
+    String? receiptImagePath,
+  }) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/collection-checkout'));
+      request.fields['planId'] = planId.toString();
+      request.fields['userId'] = userId;
+      request.fields['gateway'] = gateway;
+      request.fields['txHash'] = txHash;
+      
+      if (wooId != null) request.fields['wooId'] = wooId;
+      if (network != null) request.fields['network'] = network;
+      if (gasFee != null) request.fields['gasFee'] = gasFee;
+      if (phoneNumber != null) request.fields['phoneNumber'] = phoneNumber;
+
+      if (receiptImagePath != null) {
+        request.files.add(await http.MultipartFile.fromPath('receiptImage', receiptImagePath));
+      }
+
+      final streamedResponse = await _client.send(request).timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...data};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Checkout failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
     }
   }
 

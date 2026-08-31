@@ -21,6 +21,7 @@ import 'package:jemypedia_app/features/splash/splash_screen.dart';
 import 'package:jemypedia_app/core/services/security_service.dart';
 import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
 import 'package:jemypedia_app/core/services/hls_proxy_service.dart';
+import 'package:jemypedia_app/features/auth/screens/register_screen.dart';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
@@ -472,18 +473,35 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const HomeScreen()),
-                            );
-                          },
-                          child: const Text(
-                            'Browse as Guest',
-                            style: TextStyle(color: Colors.white70),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                );
+                              },
+                              child: const Text(
+                                'Browse as Guest',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            ),
+                            const Text('|', style: TextStyle(color: Colors.white30)),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                                );
+                              },
+                              child: const Text(
+                                'Create Account',
+                                style: TextStyle(color: AppColors.accentNeon, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
