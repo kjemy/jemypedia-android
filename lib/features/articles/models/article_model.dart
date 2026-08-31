@@ -1,36 +1,71 @@
 class ArticleModel {
   final int id;
-  final Map<String, dynamic> title;
-  final Map<String, dynamic> content;
-  final String author;
+  final String title;
+  final String content;
+  final String excerpt;
   final String date;
   final String imageUrl;
+  final List<int> categories;
 
   ArticleModel({
     required this.id,
     required this.title,
     required this.content,
-    required this.author,
+    required this.excerpt,
     required this.date,
     required this.imageUrl,
+    this.categories = const [],
   });
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) {
+    String extractText(dynamic field) {
+      if (field == null) return '';
+      if (field is Map && field.containsKey('rendered')) {
+        return field['rendered'].toString();
+      }
+      return field.toString();
+    }
+
+    String img = 'https://via.placeholder.com/600x400';
+    if (json['_embedded'] != null && json['_embedded']['wp:featuredmedia'] != null) {
+      var media = json['_embedded']['wp:featuredmedia'];
+      if (media is List && media.isNotEmpty && media[0]['source_url'] != null) {
+        img = media[0]['source_url'];
+      }
+    }
+
+    List<int> cats = [];
+    if (json['categories'] != null && json['categories'] is List) {
+      cats = List<int>.from(json['categories']);
+    }
+
     return ArticleModel(
       id: json['id'] ?? 0,
-      title: json['title'] is Map ? json['title'] : {'en': json['title'] ?? '', 'ar': json['title'] ?? ''},
-      content: json['excerpt'] is Map ? json['excerpt'] : {'en': json['excerpt'] ?? '', 'ar': json['excerpt'] ?? ''},
-      author: json['author'] ?? 'Admin',
+      title: extractText(json['title']),
+      content: extractText(json['content']),
+      excerpt: extractText(json['excerpt']),
       date: json['date'] ?? '',
-      imageUrl: json['cover_image'] ?? 'https://via.placeholder.com/600x400',
+      imageUrl: img,
+      categories: cats,
     );
   }
 
-  String getLocalizedTitle(String languageCode) {
-    return title[languageCode] ?? title['en'] ?? title['ar'] ?? '';
-  }
+  // The website is primarily Arabic, so we can just return the text directly since WP usually handles one language or WPML structure.
+  // If it's WPML, the API handles the language per endpoint, but we'll just return the title.
+  String getLocalizedTitle(String languageCode) => title;
+  String getLocalizedContent(String languageCode) => excerpt; // returning excerpt for list view
+}
 
-  String getLocalizedContent(String languageCode) {
-    return content[languageCode] ?? content['en'] ?? content['ar'] ?? '';
+class PostCategoryModel {
+  final int id;
+  final String name;
+
+  PostCategoryModel({required this.id, required this.name});
+
+  factory PostCategoryModel.fromJson(Map<String, dynamic> json) {
+    return PostCategoryModel(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+    );
   }
 }

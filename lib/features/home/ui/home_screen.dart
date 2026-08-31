@@ -140,20 +140,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   : _buildMainContent(context, provider, auth, isDark, textColor),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ChatScreen()),
-          );
-        },
-        backgroundColor: Colors.white,
-        elevation: 10,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: const Icon(
-          Icons.chat_bubble_rounded, 
-          color: Color(0xFF212121),
-          size: 35,
+      floatingActionButton: SizedBox(
+        width: 45,
+        height: 45,
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatScreen()),
+            );
+          },
+          backgroundColor: const Color(0xFFED2024), // The red color from the screenshot
+          elevation: 6,
+          shape: const CircleBorder(),
+          child: const Icon(
+            Icons.chat_bubble_outline_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -261,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, setState) {
         int currentPage = 0;
         return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.65,
+          height: MediaQuery.of(context).size.height * 0.60,
           child: Stack(
             children: [
               PageView.builder(
@@ -273,7 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 itemBuilder: (context, index) {
                   final course = heroCourses[index];
-                  // Extracted category name (fallback if not available)
                   final categoryName = course.category.isNotEmpty ? course.category : (isArabic ? 'دورة تدريبية' : 'Course');
                   final instructorName = course.getLocalizedInstructor(locale);
 
@@ -285,10 +288,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           image: CachedNetworkImageProvider(course.coverImageUrl),
                           fit: BoxFit.cover,
                           alignment: Alignment.topCenter,
-                          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
                         ),
                       ),
-                      child: Padding(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.9),
+                              Colors.black.withOpacity(0.5),
+                              Colors.transparent,
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
                         padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 40.0, top: 40.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
