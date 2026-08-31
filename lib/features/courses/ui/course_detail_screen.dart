@@ -470,15 +470,26 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                                     ],
                                                   ),
                                                   // Left side (RTL logic) - Title & Radio
-                                                  Row(
-                                                    children: [
-                                                      Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                                                      const SizedBox(width: 12),
-                                                      Icon(
-                                                        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                                                        color: isSelected ? Colors.white : Colors.white38,
-                                                      ),
-                                                    ],
+                                                  Expanded(
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.end,
+                                                      children: [
+                                                        Expanded(
+                                                          child: Text(
+                                                            title,
+                                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                                            textAlign: TextAlign.right,
+                                                            maxLines: 2,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 12),
+                                                        Icon(
+                                                          isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                                                          color: isSelected ? Colors.white : Colors.white38,
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
                                                 ],
                                               ),
