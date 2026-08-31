@@ -41,6 +41,7 @@ dependencies:
   flutter_native_splash: ^2.4.1
   ffi: ^2.1.2
   image_picker: ^1.1.2
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
@@ -63,7 +64,7 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#000000"
-  image: "assets/images/app_icon.png"
+  image: "assets/images/splash_logo.jpg"
   android: true
   ios: true
 

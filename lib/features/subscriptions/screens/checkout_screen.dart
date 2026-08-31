@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:jemypedia_app/core/providers/auth_provider.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final int courseId;
@@ -38,11 +41,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   bool _isSubmitting = false;
   bool _isSuccess = false;
+  
+  Timer? _countdownTimer;
+  int _secondsRemaining = 30 * 60;
 
   @override
   void initState() {
     super.initState();
     _fetchGateways();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        if (mounted) setState(() => _secondsRemaining--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+  
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _txHashController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchGateways() async {
