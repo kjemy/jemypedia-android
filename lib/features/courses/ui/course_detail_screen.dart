@@ -388,75 +388,179 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(locale == 'ar' ? 'باقات الاشتراك' : 'Subscription Packages', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
-                          const SizedBox(height: 15),
-                          if (widget.course.pricingPlans.isNotEmpty)
-                            ...widget.course.pricingPlans.map((plan) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: GlassContainer(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(plan['title'] is Map ? (plan['title'][locale] ?? plan['title']['en'] ?? 'باقة') : (plan['title']?.toString() ?? 'باقة'), style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
-                                          Text('${plan['access_period']?[locale] ?? ''} - ${plan['sale_price'] ?? plan['regular_price']} \$', style: const TextStyle(color: AppColors.accentNeon)),
-                                        ],
-                                      ),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => CheckoutScreen(
-                                            courseId: widget.course.id,
-                                            courseTitle: widget.course.getLocalizedTitle(locale),
-                                            price: (plan['sale_price'] ?? plan['regular_price']).toString(),
-                                            wooId: plan['id']?.toString(),
-                                          )),
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                                      child: Text(locale == 'ar' ? 'اشترك' : 'Subscribe'),
-                                    ),
-                                  ],
-                                ),
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF161616),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white10),
                               ),
-                            ))
-                          else
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: GlassContainer(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(locale == 'ar' ? 'الاشتراك الكامل' : 'Full Access', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
-                                          Text('${widget.course.price['sale_price'] ?? widget.course.price['regular_price']} \$', style: const TextStyle(color: AppColors.accentNeon)),
-                                        ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Center(
+                                    child: Text(
+                                      locale == 'ar' ? 'اختر خطة الاشتراك المناسبة لك' : 'Choose Subscription Plan',
+                                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  if (widget.course.pricingPlans.isNotEmpty)
+                                    ...widget.course.pricingPlans.map((plan) {
+                                      final isSelected = _selectedPlan == plan;
+                                      final title = plan['title'] is Map ? (plan['title'][locale] ?? plan['title']['en'] ?? 'باقة') : (plan['title']?.toString() ?? 'باقة');
+                                      final salePrice = plan['sale_price'] ?? plan['regular_price'];
+                                      final regularPrice = plan['regular_price'];
+                                      final hasDiscount = plan['sale_price'] != null && plan['sale_price'] != plan['regular_price'];
+                                      
+                                      int savingsPercent = 0;
+                                      if (hasDiscount && regularPrice != null && regularPrice.toString().isNotEmpty) {
+                                        try {
+                                          final r = double.parse(regularPrice.toString());
+                                          final s = double.parse(salePrice.toString());
+                                          if (r > 0) savingsPercent = ((r - s) / r * 100).round();
+                                        } catch (_) {}
+                                      }
+                                      
+                                      final isPopular = plan['is_popular'] == true || plan['is_popular'] == 'yes' || plan['popular'] == true || title.toString().contains('6');
+
+                                      return GestureDetector(
+                                        onTap: () => setState(() => _selectedPlan = plan),
+                                        child: Container(
+                                          margin: const EdgeInsets.only(bottom: 12),
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
+                                            border: Border.all(color: isSelected ? Colors.red : Colors.white12, width: 1.5),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              if (isPopular)
+                                                Positioned(
+                                                  top: -26,
+                                                  right: 16,
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.amber,
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      locale == 'ar' ? 'الأكثر شعبية' : 'Popular',
+                                                      style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                                                    ),
+                                                  ),
+                                                ),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  // Right side (RTL logic) - Prices
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text('\$${salePrice}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
+                                                      if (hasDiscount) ...[
+                                                        const SizedBox(height: 2),
+                                                        Text('\$${regularPrice}', style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 12)),
+                                                        const SizedBox(height: 6),
+                                                        Text('✓ وفر ${savingsPercent}%', style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                  // Left side (RTL logic) - Title & Radio
+                                                  Row(
+                                                    children: [
+                                                      Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Cairo')),
+                                                      const SizedBox(width: 12),
+                                                      Icon(
+                                                        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                                                        color: isSelected ? Colors.white : Colors.white38,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList()
+                                  else
+                                    GestureDetector(
+                                      onTap: () => setState(() => _selectedPlan = 'full_access'),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.red, width: 1.5),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('\$${widget.course.price['sale_price'] ?? widget.course.price['regular_price']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
+                                            Row(
+                                              children: [
+                                                Text(locale == 'ar' ? 'الاشتراك الكامل' : 'Full Access', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Cairo')),
+                                                const SizedBox(width: 12),
+                                                const Icon(Icons.radio_button_checked, color: Colors.white),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    ElevatedButton(
+                                  
+                                  const SizedBox(height: 20),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
                                       onPressed: () {
+                                        String price = '';
+                                        String? wooId;
+                                        String? accessPeriod;
+                                        String planTitle = '';
+                                        
+                                        if (_selectedPlan == 'full_access') {
+                                          price = (widget.course.price['sale_price'] ?? widget.course.price['regular_price']).toString();
+                                          planTitle = locale == 'ar' ? 'الاشتراك الكامل' : 'Full Access';
+                                        } else if (_selectedPlan != null) {
+                                          price = (_selectedPlan['sale_price'] ?? _selectedPlan['regular_price']).toString();
+                                          wooId = _selectedPlan['id']?.toString();
+                                          accessPeriod = _selectedPlan['access_period']?[locale];
+                                          planTitle = _selectedPlan['title'] is Map ? (_selectedPlan['title'][locale] ?? _selectedPlan['title']['en'] ?? '') : (_selectedPlan['title']?.toString() ?? '');
+                                        }
+
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(builder: (_) => CheckoutScreen(
                                             courseId: widget.course.id,
-                                            courseTitle: widget.course.getLocalizedTitle(locale),
-                                            price: (widget.course.price['sale_price'] ?? widget.course.price['regular_price']).toString(),
+                                            courseTitle: "${widget.course.getLocalizedTitle(locale)} - $planTitle",
+                                            price: price,
+                                            wooId: wooId,
+                                            imageUrl: widget.course.coverImageUrl,
+                                            accessPeriod: accessPeriod,
                                           )),
                                         );
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                                      child: Text(locale == 'ar' ? 'اشترك' : 'Subscribe'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      child: Text(locale == 'ar' ? 'اشترك الآن' : 'Subscribe Now', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Center(
+                                    child: Text(
+                                      locale == 'ar' ? 'الدفع آمن 100%. يمكنك إلغاء الاشتراك في أي وقت.' : '100% Secure Payment. Cancel anytime.',
+                                      style: const TextStyle(color: Colors.white38, fontSize: 10, fontFamily: 'Cairo'),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           const SizedBox(height: 30),
