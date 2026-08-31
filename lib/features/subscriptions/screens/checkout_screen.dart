@@ -241,6 +241,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onChanged: (val) => setState(() => _selectedMethod = val),
                         );
                       }).toList(),
+                      if (_selectedMethod != null) ...[
+                        const SizedBox(height: 15),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                            child: QrImageView(
+                              data: _selectedMethod!['wallet_address'] ?? '',
+                              version: QrVersions.auto,
+                              size: 150.0,
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _selectedMethod!['wallet_address'] ?? '',
+                                style: const TextStyle(color: AppColors.accentNeon, fontSize: 14),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.copy, color: Colors.white),
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: _selectedMethod!['wallet_address'] ?? ''));
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ بنجاح!')));
+                              },
+                            )
+                          ],
+                        )
+                      ]
                     ],
 
                     const SizedBox(height: 20),
