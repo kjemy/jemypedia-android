@@ -1,0 +1,10 @@
+import sys
+
+checkout_path = r'C:\Users\hp\.gemini\antigravity\scratch\jemypedia-android\lib\features\subscriptions\screens\checkout_screen.dart'
+with open(checkout_path, 'r', encoding='utf-8') as f:
+    content = f.read()
+
+content = content.replace("children: const [\n                                        Text('????? ??????? ?????? ?????', style: TextStyle(color: Colors.white70, fontSize: 12)),\n                                        Text('???? ????? ???????? ??? ?????? ??????', style: TextStyle(color: Colors.white38, fontSize: 10)),\n                                      ],", "children: [\n                                        Text(locale == 'ar' ? '????? ??????? ?????? ?????' : 'Time Remaining', style: const TextStyle(color: Colors.white70, fontSize: 12)),\n                                        Text(locale == 'ar' ? '???? ????? ???????? ??? ?????? ??????' : 'Please submit details before time expires', style: const TextStyle(color: Colors.white38, fontSize: 10)),\n                                      ],")
+
+with open(checkout_path, 'w', encoding='utf-8') as f:
+    f.write(content)

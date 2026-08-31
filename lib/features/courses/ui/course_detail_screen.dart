@@ -231,7 +231,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.right,
               ),
             ),
@@ -352,7 +352,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildHeader(locale, textColor),
-                      Text(locale == 'ar' ? 'عدد الدروس: ${widget.course.lessons.length}' : 'Lessons: ${widget.course.lessons.length}', style: const TextStyle(color: Colors.green, fontSize: 12)),
+                      Text(locale == 'ar' ? 'عدد الدروس: ${widget.course.lessons.length}' : 'Lessons: ${widget.course.lessons.length}', style: const TextStyle(color: Colors.green, fontSize: 10)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -401,7 +401,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                   Center(
                                     child: Text(
                                       locale == 'ar' ? 'اختر خطة الاشتراك المناسبة لك' : 'Choose Subscription Plan',
-                                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   const SizedBox(height: 20),
@@ -449,7 +449,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                                     ),
                                                     child: Text(
                                                       locale == 'ar' ? 'الأكثر شعبية' : 'Popular',
-                                                      style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                                                      style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
                                                     ),
                                                   ),
                                                 ),
@@ -460,19 +460,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                                   Column(
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
-                                                      Text('\$${salePrice}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
+                                                      Text('\$${salePrice}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
                                                       if (hasDiscount) ...[
                                                         const SizedBox(height: 2),
-                                                        Text('\$${regularPrice}', style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 12)),
+                                                        Text('\$${regularPrice}', style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 10)),
                                                         const SizedBox(height: 6),
-                                                        Text('✓ وفر ${savingsPercent}%', style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                                                        Text('✓ وفر ${savingsPercent}%', style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold)),
                                                       ],
                                                     ],
                                                   ),
                                                   // Left side (RTL logic) - Title & Radio
                                                   Row(
                                                     children: [
-                                                      Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Cairo')),
+                                                      Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                                                       const SizedBox(width: 12),
                                                       Icon(
                                                         isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
@@ -499,10 +499,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text('\$${widget.course.price['sale_price'] ?? widget.course.price['regular_price']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
+                                            Text('\$${widget.course.price['sale_price'] ?? widget.course.price['regular_price']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
                                             Row(
                                               children: [
-                                                Text(locale == 'ar' ? 'الاشتراك الكامل' : 'Full Access', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Cairo')),
+                                                Text(locale == 'ar' ? 'الاشتراك الكامل' : 'Full Access', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                                                 const SizedBox(width: 12),
                                                 const Icon(Icons.radio_button_checked, color: Colors.white),
                                               ],
@@ -550,14 +550,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                         padding: const EdgeInsets.symmetric(vertical: 16),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                       ),
-                                      child: Text(locale == 'ar' ? 'اشترك الآن' : 'Subscribe Now', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                                      child: Text(locale == 'ar' ? 'اشترك الآن' : 'Subscribe Now', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                   const SizedBox(height: 10),
                                   Center(
                                     child: Text(
                                       locale == 'ar' ? 'الدفع آمن 100%. يمكنك إلغاء الاشتراك في أي وقت.' : '100% Secure Payment. Cancel anytime.',
-                                      style: const TextStyle(color: Colors.white38, fontSize: 10, fontFamily: 'Cairo'),
+                                      style: const TextStyle(color: Colors.white38, fontSize: 10),
                                     ),
                                   ),
                                 ],
@@ -811,11 +811,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       : isPreCourse 
                         ? (locale == 'ar' ? 'اختبار تمهيدي' : 'Pre-Course Quiz')
                         : (locale == 'ar' ? 'الاختبار النهائي' : 'Final Exam'),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   Text(
                     quiz.getLocalizedTitle(locale),
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ],
               ),
@@ -914,7 +914,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                           ),
                       ],
                     ),
-                    Text('${lesson.duration} ${locale == 'ar' ? 'دقيقة' : 'mins'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text('${lesson.duration} ${locale == 'ar' ? 'دقيقة' : 'mins'}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
               ),
@@ -966,7 +966,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(locale == 'ar' ? 'مواد الدرس' : 'Lesson Materials', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(locale == 'ar' ? 'مواد الدرس' : 'Lesson Materials', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 15),
                 MaterialsSection(materials: materials),
               ],

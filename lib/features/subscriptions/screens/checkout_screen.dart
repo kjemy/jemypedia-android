@@ -1,9 +1,10 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:jemypedia_app/core/providers/locale_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
@@ -97,17 +98,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final txHash = _txHashController.text.trim();
     if (txHash.isEmpty && _selectedGateway?['type'] != 'ewallet') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال رقم العملية (TX Hash)')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ø§Ù„Ø¹Ù…Ù„ÙŠØ© (TX Hash)')));
       return;
     }
 
     if (_selectedGateway?['type'] == 'ewallet') {
       if (_phoneController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال رقم المحفظة')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ø§Ù„Ù…Ø­ÙØ¸Ø©')));
         return;
       }
       if (_receiptImage == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إرفاق صورة الإيصال')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø¥Ø±ÙØ§Ù‚ ØµÙˆØ±Ø© Ø§Ù„Ø¥ÙŠØµØ§Ù„')));
         return;
       }
     }
@@ -129,13 +130,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (mounted) setState(() => _isSubmitting = false);
 
     if (res['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'تم إرسال طلبك بنجاح')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø·Ù„Ø¨Ùƒ Ø¨Ù†Ø¬Ø§Ø­')));
       if (mounted) {
         setState(() => _isSuccess = true);
         Navigator.of(context).pop();
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'حدث خطأ')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Ø­Ø¯Ø« Ø®Ø·Ø£')));
     }
   }
 
@@ -150,7 +151,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildFieldLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -163,10 +164,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white30, fontSize: 13, fontFamily: 'Cairo'),
+          hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
@@ -187,7 +188,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Text(
           _receiptImage == null ? 'Choose File... No file chosen' : _receiptImage!.path.split('/').last,
-          style: TextStyle(color: _receiptImage == null ? Colors.white30 : Colors.white, fontFamily: 'Cairo', fontSize: 13),
+          style: TextStyle(color: _receiptImage == null ? Colors.white30 : Colors.white, fontSize: 13),
           textAlign: TextAlign.start,
         ),
       ),
@@ -211,7 +212,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               icon: const Icon(Icons.copy_rounded, color: Colors.white70, size: 20),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: text));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ!')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ØªÙ… Ø§Ù„Ù†Ø³Ø®!')));
               },
             ),
           ),
@@ -250,13 +251,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           children: [
             Text(
               title.toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'Cairo'),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(
-                'عنوان: ',
+                'Ø¹Ù†ÙˆØ§Ù†: ',
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -271,10 +272,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Provider.of<LocaleProvider>(context).locale.languageCode;
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F), // Dark matching the website
       appBar: AppBar(
-        title: const Text('إتمام الاشتراك', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text('Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -286,7 +288,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // --- Order Summary (ملخص الطلب) ---
+                  // --- Order Summary (Ù…Ù„Ø®Øµ Ø§Ù„Ø·Ù„Ø¨) ---
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -299,8 +301,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         const Center(
                           child: Text(
-                            'ملخص الطلب',
-                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                            'Ù…Ù„Ø®Øµ Ø§Ù„Ø·Ù„Ø¨',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -314,7 +316,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 children: [
                                   Text(
                                     widget.courseTitle,
-                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                                     textAlign: TextAlign.right,
                                   ),
                                 ],
@@ -342,7 +344,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('\$${widget.price}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                            const Text('سعر الاشتراك', style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo')),
+                            Text(locale == 'ar' ? 'Ø³Ø¹Ø± Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ' : 'Subscription Price', style: TextStyle(color: Colors.white70, fontSize: 14)),
                           ],
                         ),
                         if (widget.accessPeriod != null && widget.accessPeriod!.isNotEmpty) ...[
@@ -350,8 +352,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(widget.accessPeriod!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
-                              const Text('مدة الاشتراك', style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo')),
+                              Text(widget.accessPeriod!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                              Text(locale == 'ar' ? 'Ù…Ø¯Ø© Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ' : 'Access Period', style: TextStyle(color: Colors.white70, fontSize: 14)),
                             ],
                           ),
                         ],
@@ -362,7 +364,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('\$${widget.price}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                            const Text('الإجمالي', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                            Text(locale == 'ar' ? 'Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ' : 'Total', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ],
@@ -384,13 +386,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         const Center(
                           child: Text(
-                            'اختر طريقة الدفع',
-                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                            'Ø§Ø®ØªØ± Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ø¯ÙØ¹',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(height: 20),
                         if (_gateways.isEmpty)
-                          const Text('لا توجد طرق دفع متاحة', style: TextStyle(color: Colors.red))
+                          Text(locale == 'ar' ? 'Ù„Ø§ ØªÙˆØ¬Ø¯ Ø·Ø±Ù‚ Ø¯ÙØ¹ Ù…ØªØ§Ø­Ø©' : 'No Payment Methods Available', style: TextStyle(color: Colors.red))
                         else
                           Row(
                             children: _gateways.map((gw) {
@@ -399,7 +401,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
                                   child: _buildCardSelector(
-                                    title: gw['title_ar'] ?? gw['title'] ?? '',
+                                    title: (locale == 'ar' ? (gw['title_ar'] ?? gw['title']) : gw['title']) ?? '',
                                     isSelected: isSelected,
                                     onTap: () {
                                       setState(() {
@@ -431,7 +433,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Center(
-                            child: Text('تفاصيل الدفع (${_selectedGateway!["title_ar"] ?? _selectedGateway!["title"] ?? ""})', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                            child: Text((locale == 'ar' ? 'ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¯ÙØ¹ (' : 'Payment Details (') + ((locale == 'ar' ? (_selectedGateway!["title_ar"] ?? _selectedGateway!["title"]) : _selectedGateway!["title"]) ?? "") + ')', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                           if (_selectedGateway!['instructions_ar'] != null) ...[
@@ -439,7 +441,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             Center(
                               child: Text(
                                 _selectedGateway!['instructions_ar'],
-                                style: const TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Cairo'),
+                                style: const TextStyle(color: Colors.white54, fontSize: 12),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -448,7 +450,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           
                           // -- E-Wallet Selection --
                           if (_selectedGateway!['type'] == 'ewallet' && _selectedGateway!['wallets'] != null) ...[
-                            const Text('اختر المحفظة أو البنك:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Cairo'), textAlign: TextAlign.right),
+                            Text(locale == 'ar' ? 'Ø§Ø®ØªØ± Ø§Ù„Ù…Ø­ÙØ¸Ø© Ø£Ùˆ Ø§Ù„Ø¨Ù†Ùƒ:' : 'Select Wallet/Bank:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.right),
                             const SizedBox(height: 10),
                             Row(
                               children: (_selectedGateway!['wallets'] as List).map((wallet) {
@@ -470,7 +472,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                           // -- Crypto Selection --
                           if (_selectedGateway!['type'] == 'crypto' && _selectedGateway!['networks'] != null) ...[
-                            const Text('اختر شبكة التحويل:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Cairo'), textAlign: TextAlign.right),
+                            Text(locale == 'ar' ? 'Ø§Ø®ØªØ± Ø´Ø¨ÙƒØ© Ø§Ù„ØªØ­ÙˆÙŠÙ„:' : 'Select Network:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.right),
                             const SizedBox(height: 10),
                             Row(
                               children: (_selectedGateway!['networks'] as List).map((net) {
@@ -512,19 +514,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           // -- Input Fields --
                           if (_selectedMethod != null || _selectedGateway!['type'] == 'manual') ...[
                             if (_selectedGateway!['type'] == 'ewallet') ...[
-                              _buildFieldLabel('صورة إيصال التحويل *'),
+                              _buildFieldLabel(locale == 'ar' ? 'ØµÙˆØ±Ø© Ø¥ÙŠØµØ§Ù„ Ø§Ù„ØªØ­ÙˆÙŠÙ„ *' : 'Transfer Receipt Image *'),
                               _buildFilePicker(),
                               const SizedBox(height: 20),
                               
-                              _buildFieldLabel('رقم المحفظة المحول منها (رقم التليفون) *'),
-                              _buildTextField(controller: _phoneController, hint: 'مثال: 01012345678'),
+                              _buildFieldLabel(locale == 'ar' ? 'Ø±Ù‚Ù… Ø§Ù„Ù…Ø­ÙØ¸Ø© Ø§Ù„Ù…Ø­ÙˆÙ„ Ù…Ù†Ù‡Ø§ (Ø±Ù‚Ù… Ø§Ù„ØªÙ„ÙŠÙÙˆÙ†) *' : 'Sender Wallet/Phone Number *'),
+                              _buildTextField(controller: _phoneController, hint: locale == 'ar' ? 'Ù…Ø«Ø§Ù„: 01012345678' : 'Example: 01012345678'),
                               const SizedBox(height: 20),
 
-                              _buildFieldLabel('الرقم المرجعي للعملية (Transaction ID) *'),
-                              _buildTextField(controller: _txHashController, hint: 'الرقم المرجعي'),
+                              _buildFieldLabel(locale == 'ar' ? 'Ø§Ù„Ø±Ù‚Ù… Ø§Ù„Ù…Ø±Ø¬Ø¹ÙŠ Ù„Ù„Ø¹Ù…Ù„ÙŠØ© (Transaction ID) *' : 'Transaction ID *'),
+                              _buildTextField(controller: _txHashController, hint: locale == 'ar' ? 'Ø§Ù„Ø±Ù‚Ù… Ø§Ù„Ù…Ø±Ø¬Ø¹ÙŠ' : 'Transaction ID'),
                             ] else ...[
-                              _buildFieldLabel('رقم العملية (TX Hash) *'),
-                              _buildTextField(controller: _txHashController, hint: 'أدخل TX Hash المكون من الحروف والأرقام'),
+                              _buildFieldLabel(locale == 'ar' ? 'Ø±Ù‚Ù… Ø§Ù„Ø¹Ù…Ù„ÙŠØ© (TX Hash) *' : 'Transaction Hash *'),
+                              _buildTextField(controller: _txHashController, hint: locale == 'ar' ? 'Ø£Ø¯Ø®Ù„ TX Hash Ø§Ù„Ù…ÙƒÙˆÙ† Ù…Ù† Ø§Ù„Ø­Ø±ÙˆÙ ÙˆØ§Ù„Ø£Ø±Ù‚Ø§Ù…' : 'Enter Transaction Hash'),
                             ],
                             
                             const SizedBox(height: 30),
@@ -535,15 +537,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               children: [
                                 Text(
                                   '${(_secondsRemaining ~/ 60).toString().padLeft(2, '0')}:${(_secondsRemaining % 60).toString().padLeft(2, '0')}',
-                                  style: const TextStyle(color: Colors.red, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Courier'),
+                                  style: const TextStyle(color: Colors.red, fontSize: 24, fontWeight: FontWeight.bold),
                                 ),
                                 Row(
                                   children: [
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: const [
-                                        Text('الوقت المتبقي لإتمام الدفع', style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Cairo')),
-                                        Text('يرجى إرسال البيانات قبل انتهاء العداد', style: TextStyle(color: Colors.white38, fontSize: 10, fontFamily: 'Cairo')),
+                                      children: [
+                                        Text('Ø§Ù„ÙˆÙ‚Øª Ø§Ù„Ù…ØªØ¨Ù‚ÙŠ Ù„Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø¯ÙØ¹', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                        Text('ÙŠØ±Ø¬Ù‰ Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ù‚Ø¨Ù„ Ø§Ù†ØªÙ‡Ø§Ø¡ Ø§Ù„Ø¹Ø¯Ø§Ø¯', style: TextStyle(color: Colors.white38, fontSize: 10)),
                                       ],
                                     ),
                                     const SizedBox(width: 8),
@@ -566,7 +568,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                                 child: _isSubmitting
                                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                    : const Text('تأكيد الدفع والاشتراك', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                                    : Text(locale == 'ar' ? 'ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø¯ÙØ¹ ÙˆØ§Ù„Ø§Ø´ØªØ±Ø§Ùƒ' : 'Confirm Payment & Subscribe', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ],
@@ -580,3 +582,5 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 }
+
+
