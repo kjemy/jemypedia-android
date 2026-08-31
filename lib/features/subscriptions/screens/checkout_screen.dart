@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,7 +98,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final txHash = _txHashController.text.trim();
     if (txHash.isEmpty && _selectedGateway?['type'] != 'ewallet') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø¥Ø¯Ø®Ø§Ù„ Ø±Ù‚Ù… Ø§Ù„Ø¹Ù…Ù„ÙŠØ© (TX Hash)')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال رقم العملية (TX Hash)')));
       return;
     }
 
@@ -130,13 +130,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (mounted) setState(() => _isSubmitting = false);
 
     if (res['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø·Ù„Ø¨Ùƒ Ø¨Ù†Ø¬Ø§Ø­')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'تم إرسال طلبك بنجاح')));
       if (mounted) {
         setState(() => _isSuccess = true);
         Navigator.of(context).pop();
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Ø­Ø¯Ø« Ø®Ø·Ø£')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'حدث خطأ')));
     }
   }
 
@@ -212,7 +212,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               icon: const Icon(Icons.copy_rounded, color: Colors.white70, size: 20),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: text));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ØªÙ… Ø§Ù„Ù†Ø³Ø®!')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ!')));
               },
             ),
           ),
@@ -257,7 +257,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(
-                'Ø¹Ù†ÙˆØ§Ù†: ',
+                'عنوان: ',
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -276,7 +276,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F), // Dark matching the website
       appBar: AppBar(
-        title: const Text('Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text('إتمام الاشتراك', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -301,7 +301,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         const Center(
                           child: Text(
-                            'Ù…Ù„Ø®Øµ Ø§Ù„Ø·Ù„Ø¨',
+                            'ملخص الطلب',
                             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
