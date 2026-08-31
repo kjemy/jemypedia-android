@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
-import 'package:jemypedia_app/core/theme/app_colors.dart';
-import 'package:jemypedia_app/shared/widgets/glass_container.dart';
-import 'package:jemypedia_app/core/services/wordpress_service.dart';
-import 'package:provider/provider.dart';
-import 'package:jemypedia_app/core/providers/auth_provider.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:jemypedia_app/core/theme/app_colors.dart';
+import 'package:jemypedia_app/core/services/wordpress_service.dart';
+import 'package:jemypedia_app/core/providers/auth_provider.dart';
+import 'package:jemypedia_app/shared/widgets/glass_container.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final int courseId;
   final String courseTitle;
   final String price;
   final String? wooId;
-  
+
   const CheckoutScreen({
     super.key,
     required this.courseId,
@@ -41,7 +41,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   bool _isSubmitting = false;
   bool _isSuccess = false;
-  
+
   Timer? _countdownTimer;
   int _secondsRemaining = 30 * 60;
 
@@ -60,14 +60,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         timer.cancel();
       }
     });
-  }
-  
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    _txHashController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 
   Future<void> _fetchGateways() async {
@@ -93,7 +85,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _submitCheckout() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final userId = auth.userId?.toString() ?? '';
-    
+
     if (userId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please log in first')));
       return;
@@ -101,229 +93,400 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final txHash = _txHashController.text.trim();
     if (txHash.isEmpty && _selectedGateway?['type'] != 'ewallet') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter TX Hash')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال رقم العملية (TX Hash)')));
       return;
+    }
+
+    if (_selectedGateway?['type'] == 'ewallet') {
+      if (_phoneController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال رقم المحفظة')));
+        return;
+      }
+      if (_receiptImage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إرفاق صورة الإيصال')));
+        return;
+      }
     }
 
     setState(() => _isSubmitting = true);
 
     final res = await _wpService.submitCheckout(
       planId: widget.courseId,
+      wooId: widget.wooId,
       userId: userId,
       gateway: _selectedGateway!['id'],
-      txHash: txHash.isEmpty ? 'EWALLET_TX' : txHash,
-      wooId: widget.wooId,
       network: _selectedMethod?['network'],
       gasFee: _selectedMethod?['gas_fee']?.toString(),
+      txHash: txHash,
       phoneNumber: _phoneController.text.trim(),
       receiptImagePath: _receiptImage?.path,
     );
 
-    setState(() => _isSubmitting = false);
+    if (mounted) setState(() => _isSubmitting = false);
 
     if (res['success'] == true) {
-      setState(() => _isSuccess = true);
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) Navigator.pop(context);
-      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'تم إرسال طلبك بنجاح')));
+      if (mounted) {
+        setState(() => _isSuccess = true);
+        Navigator.of(context).pop();
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'حدث خطأ')));
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_isSuccess) {
-      return Scaffold(
-        backgroundColor: AppColors.bgDark,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.check_circle_outline, color: Colors.green, size: 100),
-              const SizedBox(height: 20),
-              const Text('تم استلام طلبك بنجاح!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
-              const SizedBox(height: 10),
-              const Text('سيتم مراجعة الدفع وتفعيل الكورس قريباً', style: TextStyle(color: Colors.white70, fontFamily: 'Cairo')),
-            ],
-          ),
-        ),
-      );
-    }
+  void dispose() {
+    _countdownTimer?.cancel();
+    _txHashController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
+  Widget _buildFieldLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+    );
+  }
+
+  Widget _buildTextField({required TextEditingController controller, required String hint}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF161616),
+        border: Border.all(color: Colors.white10),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: Colors.white30, fontSize: 13, fontFamily: 'Cairo'),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilePicker() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          border: Border.all(color: Colors.white10),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Text(
+          _receiptImage == null ? 'Choose File... No file chosen' : _receiptImage!.path.split('/').last,
+          style: TextStyle(color: _receiptImage == null ? Colors.white30 : Colors.white, fontFamily: 'Cairo', fontSize: 13),
+          textAlign: TextAlign.start,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCopyableField(String text) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF161616),
+        border: Border.all(color: Colors.white10),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(right: BorderSide(color: Colors.white10)),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.copy_rounded, color: Colors.white70, size: 20),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: text));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ!')));
+              },
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                text,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardSelector({
+    required String title,
+    String? subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          border: Border.all(color: isSelected ? Colors.red : Colors.white12, width: 1.5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Text(
+              title.toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'Cairo'),
+              textAlign: TextAlign.center,
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'عنوان: ',
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: const Color(0xFF0F0F0F), // Dark matching the website
       appBar: AppBar(
-        title: const Text('إتمام الاشتراك', style: TextStyle(fontFamily: 'Cairo')),
+        title: const Text('إتمام الاشتراك', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoadingGateways
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  GlassContainer(
-                    padding: const EdgeInsets.all(16),
+                  // --- Gateway Selection Section ---
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161616),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(widget.courseTitle, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
-                        const SizedBox(height: 10),
-                        Text('السعر: ${widget.price} \$', style: const TextStyle(color: AppColors.accentNeon, fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Center(
+                          child: Text(
+                            'اختر طريقة الدفع',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        if (_gateways.isEmpty)
+                          const Text('لا توجد طرق دفع متاحة', style: TextStyle(color: Colors.red))
+                        else
+                          Row(
+                            children: _gateways.map((gw) {
+                              final isSelected = _selectedGateway?['id'] == gw['id'];
+                              return Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                  child: _buildCardSelector(
+                                    title: gw['title_ar'] ?? gw['title'] ?? '',
+                                    isSelected: isSelected,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedGateway = gw;
+                                        _selectedMethod = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Text('اختر طريقة الدفع:', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
-                  const SizedBox(height: 10),
-                  if (_gateways.isEmpty)
-                    const Text('لا توجد طرق دفع متاحة', style: TextStyle(color: Colors.red))
-                  else
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _gateways.map((gw) {
-                        final isSelected = _selectedGateway?['id'] == gw['id'];
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedGateway = gw;
-                              _selectedMethod = null;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected ? AppColors.accentNeon.withOpacity(0.2) : Colors.white10,
-                              border: Border.all(color: isSelected ? AppColors.accentNeon : Colors.white24),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(gw['title_ar'] ?? gw['title'] ?? '', style: TextStyle(color: isSelected ? AppColors.accentNeon : Colors.white, fontFamily: 'Cairo')),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  const SizedBox(height: 20),
-                  if (_selectedGateway != null) ...[
-                    Text(_selectedGateway!['instructions_ar'] ?? '', style: const TextStyle(color: Colors.white70, fontFamily: 'Cairo')),
-                    const SizedBox(height: 20),
-                    
-                    if (_selectedGateway!['type'] == 'ewallet' && _selectedGateway!['wallets'] != null) ...[
-                      const Text('اختر المحفظة:', style: TextStyle(color: Colors.white, fontFamily: 'Cairo')),
-                      const SizedBox(height: 10),
-                      ...(_selectedGateway!['wallets'] as List).map((wallet) {
-                        final isSelected = _selectedMethod == wallet;
-                        return RadioListTile<Map<String, dynamic>>(
-                          title: Text(wallet['type'].toString().toUpperCase(), style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(wallet['number'] ?? '', style: const TextStyle(color: Colors.white70)),
-                          value: wallet,
-                          groupValue: _selectedMethod,
-                          activeColor: AppColors.accentNeon,
-                          onChanged: (val) => setState(() => _selectedMethod = val),
-                        );
-                      }).toList(),
-                    ],
 
-                    if (_selectedGateway!['type'] == 'crypto' && _selectedGateway!['networks'] != null) ...[
-                      const Text('اختر الشبكة:', style: TextStyle(color: Colors.white, fontFamily: 'Cairo')),
-                      const SizedBox(height: 10),
-                      ...(_selectedGateway!['networks'] as List).map((net) {
-                        final isSelected = _selectedMethod == net;
-                        return RadioListTile<Map<String, dynamic>>(
-                          title: Text(net['network'].toString().toUpperCase(), style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(net['wallet_address'] ?? '', style: const TextStyle(color: Colors.white70)),
-                          value: net,
-                          groupValue: _selectedMethod,
-                          activeColor: AppColors.accentNeon,
-                          onChanged: (val) => setState(() => _selectedMethod = val),
-                        );
-                      }).toList(),
-                      if (_selectedMethod != null) ...[
-                        const SizedBox(height: 15),
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                            child: QrImageView(
-                              data: _selectedMethod!['wallet_address'] ?? '',
-                              version: QrVersions.auto,
-                              size: 150.0,
-                              backgroundColor: Colors.white,
+                  const SizedBox(height: 20),
+
+                  // --- Details Section ---
+                  if (_selectedGateway != null)
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF161616),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Text(
+                              'تفاصيل الدفع ()',
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(
+                          if (_selectedGateway!['instructions_ar'] != null) ...[
+                            const SizedBox(height: 8),
+                            Center(
                               child: Text(
-                                _selectedMethod!['wallet_address'] ?? '',
-                                style: const TextStyle(color: AppColors.accentNeon, fontSize: 14),
+                                _selectedGateway!['instructions_ar'],
+                                style: const TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Cairo'),
                                 textAlign: TextAlign.center,
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.copy, color: Colors.white),
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(text: _selectedMethod!['wallet_address'] ?? ''));
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ بنجاح!')));
-                              },
-                            )
                           ],
-                        )
-                      ]
-                    ],
+                          const SizedBox(height: 20),
+                          
+                          // -- E-Wallet Selection --
+                          if (_selectedGateway!['type'] == 'ewallet' && _selectedGateway!['wallets'] != null) ...[
+                            const Text('اختر المحفظة أو البنك:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Cairo'), textAlign: TextAlign.right),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: (_selectedGateway!['wallets'] as List).map((wallet) {
+                                final isSelected = _selectedMethod == wallet;
+                                return Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                    child: _buildCardSelector(
+                                      title: wallet['type'].toString(),
+                                      subtitle: wallet['number'],
+                                      isSelected: isSelected,
+                                      onTap: () => setState(() => _selectedMethod = wallet),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
 
-                    const SizedBox(height: 20),
-                    if (_selectedMethod != null || _selectedGateway!['type'] == 'manual') ...[
-                      if (_selectedGateway!['type'] == 'ewallet') ...[
-                        TextField(
-                          controller: _phoneController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            labelText: 'رقم المحفظة المحول منها',
-                            labelStyle: TextStyle(color: Colors.white70, fontFamily: 'Cairo'),
-                            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.accentNeon)),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          onPressed: _pickImage,
-                          icon: const Icon(Icons.image),
-                          label: Text(_receiptImage == null ? 'إرفاق صورة الإيصال' : 'تم الإرفاق: ${_receiptImage!.path.split('/').last}', style: const TextStyle(fontFamily: 'Cairo')),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white10),
-                        ),
-                      ] else ...[
-                        TextField(
-                          controller: _txHashController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            labelText: 'TX Hash / الرقم المرجعي',
-                            labelStyle: TextStyle(color: Colors.white70, fontFamily: 'Cairo'),
-                            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.accentNeon)),
-                          ),
-                        ),
-                      ],
-                      
-                      const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submitCheckout,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accentNeon,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                        ),
-                        child: _isSubmitting
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('تأكيد الدفع والاشتراك', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Cairo')),
+                          // -- Crypto Selection --
+                          if (_selectedGateway!['type'] == 'crypto' && _selectedGateway!['networks'] != null) ...[
+                            const Text('اختر شبكة التحويل:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Cairo'), textAlign: TextAlign.right),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: (_selectedGateway!['networks'] as List).map((net) {
+                                final isSelected = _selectedMethod == net;
+                                return Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                    child: _buildCardSelector(
+                                      title: net['network'].toString(),
+                                      subtitle: net['wallet_address'],
+                                      isSelected: isSelected,
+                                      onTap: () => setState(() => _selectedMethod = net),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            if (_selectedMethod != null) ...[
+                              const SizedBox(height: 20),
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                                  child: QrImageView(
+                                    data: _selectedMethod!['wallet_address'] ?? '',
+                                    version: QrVersions.auto,
+                                    size: 160.0,
+                                    backgroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              _buildCopyableField(_selectedMethod!['wallet_address'] ?? ''),
+                            ],
+                          ],
+
+                          const SizedBox(height: 30),
+
+                          // -- Input Fields --
+                          if (_selectedMethod != null || _selectedGateway!['type'] == 'manual') ...[
+                            if (_selectedGateway!['type'] == 'ewallet') ...[
+                              _buildFieldLabel('صورة إيصال التحويل *'),
+                              _buildFilePicker(),
+                              const SizedBox(height: 20),
+                              
+                              _buildFieldLabel('رقم المحفظة المحول منها (رقم التليفون) *'),
+                              _buildTextField(controller: _phoneController, hint: 'مثال: 01012345678'),
+                              const SizedBox(height: 20),
+
+                              _buildFieldLabel('الرقم المرجعي للعملية (Transaction ID) *'),
+                              _buildTextField(controller: _txHashController, hint: 'الرقم المرجعي'),
+                            ] else ...[
+                              _buildFieldLabel('رقم العملية (TX Hash) *'),
+                              _buildTextField(controller: _txHashController, hint: 'أدخل TX Hash المكون من الحروف والأرقام'),
+                            ],
+                            
+                            const SizedBox(height: 30),
+                            
+                            // -- Timer & Submit Row --
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  ':',
+                                  style: const TextStyle(color: Colors.red, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Courier'),
+                                ),
+                                Row(
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: const [
+                                        Text('الوقت المتبقي لإتمام الدفع', style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Cairo')),
+                                        Text('يرجى إرسال البيانات قبل انتهاء العداد', style: TextStyle(color: Colors.white38, fontSize: 10, fontFamily: 'Cairo')),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.hourglass_bottom, color: Colors.orange, size: 28),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isSubmitting ? null : _submitCheckout,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: _isSubmitting
+                                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                    : const Text('تأكيد الدفع والاشتراك', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ],
+                    ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
