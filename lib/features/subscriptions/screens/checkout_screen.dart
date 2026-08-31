@@ -15,6 +15,8 @@ class CheckoutScreen extends StatefulWidget {
   final String courseTitle;
   final String price;
   final String? wooId;
+  final String? imageUrl;
+  final String? accessPeriod;
 
   const CheckoutScreen({
     super.key,
@@ -22,6 +24,8 @@ class CheckoutScreen extends StatefulWidget {
     required this.courseTitle,
     required this.price,
     this.wooId,
+    this.imageUrl,
+    this.accessPeriod,
   });
 
   @override
@@ -282,6 +286,91 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // --- Order Summary (ملخص الطلب) ---
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161616),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Center(
+                          child: Text(
+                            'ملخص الطلب',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    widget.courseTitle,
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) ...[
+                              const SizedBox(width: 15),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  widget.imageUrl!,
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: Colors.white10, child: const Icon(Icons.image, color: Colors.white30)),
+                                ),
+                              ),
+                            ]
+                          ],
+                        ),
+                        const SizedBox(height: 15),
+                        const Divider(color: Colors.white10),
+                        const SizedBox(height: 15),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('\{widget.price}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                            const Text('سعر الاشتراك', style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo')),
+                          ],
+                        ),
+                        if (widget.accessPeriod != null && widget.accessPeriod!.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(widget.accessPeriod!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                              const Text('مدة الاشتراك', style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo')),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 15),
+                        const Divider(color: Colors.white10),
+                        const SizedBox(height: 15),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('\{widget.price}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text('الإجمالي', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
                   // --- Gateway Selection Section ---
                   Container(
                     padding: const EdgeInsets.all(20),
