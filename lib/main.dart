@@ -18,6 +18,7 @@ import 'package:jemypedia_app/core/providers/chat_provider.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:jemypedia_app/features/splash/splash_screen.dart';
+import 'package:jemypedia_app/features/main_layout/ui/main_layout.dart';
 import 'package:jemypedia_app/core/services/security_service.dart';
 import 'package:jemypedia_app/shared/widgets/protected_screen_wrapper.dart';
 import 'package:jemypedia_app/core/services/hls_proxy_service.dart';
@@ -191,7 +192,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
                         Text(details.exception.toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen())),
+                          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainLayout())),
                           child: const Text('Reload App'),
                         ),
                       ],
@@ -219,9 +220,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
             brightness: Brightness.light,
             primaryColor: AppColors.primary,
             scaffoldBackgroundColor: AppColors.bgLight,
-            textTheme: localeProvider.isArabic 
-                ? GoogleFonts.cairoTextTheme() 
-                : GoogleFonts.interTextTheme(),
+            textTheme: GoogleFonts.cairoTextTheme(),
             iconTheme: const IconThemeData(color: AppColors.primary, size: 24),
           ),
           darkTheme: ThemeData(
@@ -229,9 +228,7 @@ class _JemyAcademyAppState extends State<JemyAcademyApp> {
             brightness: Brightness.dark,
             primaryColor: AppColors.primary,
             scaffoldBackgroundColor: AppColors.bgDark,
-            textTheme: localeProvider.isArabic 
-                ? GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme)
-                : GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+            textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme),
             iconTheme: const IconThemeData(color: Colors.white, size: 24),
           ),
           home: const SplashScreen(),
@@ -429,10 +426,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 if (userData != null && userData['success'] == true) {
                                   await authProvider.login(email, password, rememberMe: _rememberMe, userData: userData);
                                   setState(() => _isLoading = false);
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                                  );
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const MainLayout()),
+                                    );
                                 } else {
                                   setState(() => _isLoading = false);
                                   // Show the server error message (Arabic device-limit message, wrong password, etc.)
@@ -480,7 +477,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: () {
                                 Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                    MaterialPageRoute(builder: (context) => const MainLayout()),
                                 );
                               },
                               child: const Text(

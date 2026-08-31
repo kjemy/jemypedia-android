@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Palette (Neutral/Monochrome)
-  static const Color primary = Color(0xFF212121); // Dark Grey
-  static const Color primaryGlow = Color(0xFF424242);
+  static const Color primary = Color(0xFFED2024); // Jemypedia Red
+  static const Color primaryGlow = Color(0xFFFF5252);
   static const Color secondary = Color(0xFF8E44AD); // Purple (Premium)
   
   // Dark Theme Colors (Black & Grey)

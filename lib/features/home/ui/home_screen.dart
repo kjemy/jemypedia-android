@@ -207,6 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (auth.isLoggedIn) _buildSubscriptionAlert(context),
+                const SizedBox(height: 15),
+                _buildHeroCarousel(context, provider.courses, textColor),
                 const SizedBox(height: 25),
                 _buildSectionTitle(AppLocalizations.tr(context, 'popular_categories'), Icons.grid_view, textColor),
                 const SizedBox(height: 15),
@@ -246,6 +248,62 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHeroCarousel(BuildContext context, List<CourseModel> courses, Color textColor) {
+    if (courses.isEmpty) return const SizedBox.shrink();
+    
+    final heroCourses = courses.take(3).toList();
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
+
+    return SizedBox(
+      height: 220,
+      child: PageView.builder(
+        itemCount: heroCourses.length,
+        itemBuilder: (context, index) {
+          final course = heroCourses[index];
+          return GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                image: DecorationImage(
+                  image: CachedNetworkImageProvider(course.coverImageUrl),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      course.getLocalizedTitle(locale),
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text(course.progress > 0 ? "متابعة التعلم" : "اشترك الآن", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -392,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 75,
                       height: 75,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(15),
                         gradient: LinearGradient(
                           colors: [AppColors.primary, AppColors.primary.withOpacity(0.6)],
                           begin: Alignment.topLeft,
@@ -405,7 +463,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Center(
                         child: (cat['icon_image'] != null && cat['icon_image'].toString().isNotEmpty)
-                            ? ClipOval(
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
                                 child: CachedNetworkImage(
                                   imageUrl: cat['icon_image'],
                                   width: 45,
@@ -490,8 +549,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ClipOval(
                 child: Image.asset(
                   'assets/images/app_icon.png',
-                  height: 30,
-                  width: 30,
+                  height: 24,
+                  width: 24,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -658,7 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(
           children: [
             SizedBox(
-              height: 300,
+              height: 350,
               child: ListView.builder(
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
@@ -816,6 +875,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.accentNeon),
                                   ),
                                 ],
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => CourseDetailScreen(course: course)),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    child: Text(
+                                      course.progress > 0 ? "متابعة التعلم" : "اشترك الآن",
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -898,7 +979,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Stack(
             children: [
               SizedBox(
-                height: section.cardHeight + 130, // Increased to prevent any overflow
+                height: section.cardHeight + 175, // Increased to prevent any overflow
                 child: ListView.builder(
                   controller: scrollController,
                   scrollDirection: Axis.horizontal,
@@ -946,7 +1027,7 @@ class _HomeScreenState extends State<HomeScreen> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: section.cardWidth / (section.cardHeight + 130), // Increased
+              childAspectRatio: section.cardWidth / (section.cardHeight + 175), // Increased
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -1038,6 +1119,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  course.progress > 0 ? "متابعة التعلم" : "اشترك الآن",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                ),
+              ),
+            ),
           ],
         ),
       ),

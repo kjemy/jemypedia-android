@@ -6,6 +6,7 @@ import 'package:jemypedia_app/core/providers/courses_provider.dart';
 import 'package:jemypedia_app/core/providers/auth_provider.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
 import 'package:jemypedia_app/features/home/ui/home_screen.dart';
+import 'package:jemypedia_app/features/main_layout/ui/main_layout.dart';
 import 'package:jemypedia_app/main.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -108,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, __, ___) => const HomeScreen(),
+        pageBuilder: (_, __, ___) => const MainLayout(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
         },
