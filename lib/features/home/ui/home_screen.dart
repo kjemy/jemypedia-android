@@ -274,8 +274,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   final course = heroCourses[index];
                   // Extracted category name (fallback if not available)
-                  final categoryName = course.categories.isNotEmpty ? course.categories.first : 'Category';
-                  final instructorName = course.instructor;
+                  final categoryName = course.category.isNotEmpty ? course.category : (isArabic ? 'دورة تدريبية' : 'Course');
+                  final instructorName = course.getLocalizedInstructor(locale);
 
                   return GestureDetector(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
