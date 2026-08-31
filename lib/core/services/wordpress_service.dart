@@ -485,7 +485,7 @@ class WordPressService {
     try {
       final String query = wooId != null ? '?plan_id=$planId&woo_id=$wooId' : '?plan_id=$planId';
       final response = await _client.get(
-        Uri.parse('$baseUrl/collection-checkout$query'),
+        Uri.parse('$domain/wp-json/jemy/v1/collection-checkout$query'),
       ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
@@ -510,7 +510,7 @@ class WordPressService {
     String? receiptImagePath,
   }) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/collection-checkout'));
+      var request = http.MultipartRequest('POST', Uri.parse('$domain/wp-json/jemy/v1/collection-checkout'));
       request.fields['planId'] = planId.toString();
       request.fields['userId'] = userId;
       request.fields['gateway'] = gateway;
