@@ -140,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : _buildMainContent(context, provider, auth, isDark, textColor),
         ],
       ),
-      floatingActionButton: FloatingActionButton.large(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
@@ -253,57 +253,107 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeroCarousel(BuildContext context, List<CourseModel> courses, Color textColor) {
     if (courses.isEmpty) return const SizedBox.shrink();
-    
-    final heroCourses = courses.take(3).toList();
+    final heroCourses = courses.take(5).toList();
     final locale = Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
+    final isArabic = locale == 'ar';
 
-    return SizedBox(
-      height: 220,
-      child: PageView.builder(
-        itemCount: heroCourses.length,
-        itemBuilder: (context, index) {
-          final course = heroCourses[index];
-          return GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(course.coverImageUrl),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      course.getLocalizedTitle(locale),
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return StatefulBuilder(
+      builder: (context, setState) {
+        int currentPage = 0;
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.65,
+          child: Stack(
+            children: [
+              PageView.builder(
+                itemCount: heroCourses.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentPage = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final course = heroCourses[index];
+                  // Extracted category name (fallback if not available)
+                  final categoryName = course.categories.isNotEmpty ? course.categories.first : 'Category';
+                  final instructorName = course.instructor;
+
+                  return GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: CachedNetworkImageProvider(course.coverImageUrl),
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
+                        ),
                       ),
-                      child: Text(course.progress > 0 ? "متابعة التعلم" : "اشترك الآن", style: const TextStyle(fontWeight: FontWeight.bold)),
-                    )
-                  ],
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 40.0, top: 40.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              course.getLocalizedTitle(locale),
+                              style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              categoryName,
+                              style: const TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: Text(course.progress > 0 ? (isArabic ? "متابعة التعلم" : "Continue Learning") : (isArabic ? "اشترك الآن" : "Subscribe Now"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            if (instructorName.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                instructorName,
+                                style: const TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ]
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Positioned(
+                bottom: 15,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(heroCourses.length, (index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: currentPage == index ? 10 : 8,
+                      height: currentPage == index ? 10 : 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: currentPage == index ? Colors.white : Colors.white38,
+                      ),
+                    );
+                  }),
                 ),
               ),
-            ),
-          );
-        },
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -543,27 +593,23 @@ class _HomeScreenState extends State<HomeScreen> {
       flexibleSpace: FlexibleSpaceBar(
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/app_icon.png',
-                  height: 24,
-                  width: 24,
-                  fit: BoxFit.cover,
-                ),
-              ),
+            Image.asset(
+              'assets/images/app_icon.png',
+              height: 28,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               'Jemypedia',
               style: TextStyle(
                 color: isDark ? Colors.white : Colors.black,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 22,
+                fontFamily: 'Cairo', // Or English font if preferred
               ),
             ),
+
+
           ],
         ),
         centerTitle: false,

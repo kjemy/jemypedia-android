@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import 'terms_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -11,18 +12,19 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final isArabic = context.watch<LocaleProvider>().isArabic;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
-    final displayName = authProvider.displayName ?? 'Student';
+    final displayName = authProvider.displayName ?? (isArabic ? 'طالب' : 'Student');
     final userEmail = authProvider.userEmail ?? '';
     final subscriptions = authProvider.subscriptions;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Learning Dashboard'),
+        title: Text(isArabic ? 'حسابي' : 'My Account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -39,7 +41,7 @@ class DashboardScreen extends StatelessWidget {
                     backgroundColor: AppColors.primary.withOpacity(0.2),
                     child: Text(
                       displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.accentNeon),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -47,7 +49,7 @@ class DashboardScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Hello, $displayName!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
+                        Text('${isArabic ? 'مرحباً' : 'Hello'}, $displayName!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
                         Text(userEmail, style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 14)),
                       ],
                     ),
@@ -57,13 +59,13 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
             
-            Text('My Subscriptions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
+            Text(isArabic ? 'اشتراكاتي' : 'My Subscriptions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
             const SizedBox(height: 12),
             
             if (subscriptions.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(child: Text('No active subscriptions found.', style: TextStyle(color: textColor.withOpacity(0.5)))),
+                child: Center(child: Text(isArabic ? 'لا توجد اشتراكات نشطة.' : 'No active subscriptions found.', style: TextStyle(color: textColor.withOpacity(0.5)))),
               )
             else
               ListView.builder(
@@ -93,7 +95,7 @@ class DashboardScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isActive ? 'ACTIVE' : 'EXPIRED',
+                                  isActive ? (isArabic ? 'نشط' : 'ACTIVE') : (isArabic ? 'منتهي' : 'EXPIRED'),
                                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? AppColors.accentNeon : Colors.redAccent),
                                 ),
                               ),
@@ -103,10 +105,10 @@ class DashboardScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildInfoColumn('Order ID', sub['order_id'].toString(), textColor),
-                              _buildInfoColumn('Purchased', sub['purchase_date'], textColor),
-                              _buildInfoColumn('Expires', (sub['expire_date'] as String).contains(' ') ? sub['expire_date'].split(' ')[0] : sub['expire_date'], textColor),
-                              _buildInfoColumn('Remaining', days == -1 ? '∞' : '$days d', isActive ? AppColors.accentNeon : Colors.redAccent),
+                              _buildInfoColumn(isArabic ? 'رقم الطلب' : 'Order ID', sub['order_id'].toString(), textColor),
+                              _buildInfoColumn(isArabic ? 'تاريخ الشراء' : 'Purchased', sub['purchase_date'], textColor),
+                              _buildInfoColumn(isArabic ? 'تاريخ الانتهاء' : 'Expires', (sub['expire_date'] as String).contains(' ') ? sub['expire_date'].split(' ')[0] : sub['expire_date'], textColor),
+                              _buildInfoColumn(isArabic ? 'المتبقي' : 'Remaining', days == -1 ? '∞' : '$days ${isArabic ? 'يوم' : 'd'}', isActive ? AppColors.accentNeon : Colors.redAccent),
                             ],
                           ),
                         ],
@@ -117,15 +119,41 @@ class DashboardScreen extends StatelessWidget {
               ),
               
             const SizedBox(height: 30),
-            const SizedBox(height: 30),
-            Text('Account Options', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+            Text(isArabic ? 'الإعدادات والمزيد' : 'Settings & More', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
             const SizedBox(height: 10),
-            _buildOptionTile(context, Icons.security, 'Change Password', textColor, () {}),
-            _buildOptionTile(context, Icons.devices, 'Manage Devices', textColor, () {}),
-            _buildOptionTile(context, Icons.policy, 'Terms and Conditions', textColor, () {
+            
+            // Drawer-like Options
+            _buildOptionTile(context, Icons.language, isArabic ? 'تغيير اللغة' : 'Change Language', textColor, () {
+               context.read<LocaleProvider>().toggleLocale();
+            }),
+            _buildOptionTile(context, Icons.card_membership, isArabic ? 'الشهادات' : 'Certificates', textColor, () {}),
+            _buildOptionTile(context, Icons.info_outline, isArabic ? 'عن جيميبيديا' : 'About Jemypedia', textColor, () {}),
+            _buildOptionTile(context, Icons.description_outlined, isArabic ? 'الشروط والأحكام' : 'Terms & Conditions', textColor, () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()));
             }),
-            _buildOptionTile(context, Icons.help_outline, 'Support Center', textColor, () {}),
+            _buildOptionTile(context, Icons.privacy_tip_outlined, isArabic ? 'سياسة الخصوصية' : 'Privacy Policy', textColor, () {}),
+            _buildOptionTile(context, Icons.help_outline, isArabic ? 'المساعدة' : 'Help', textColor, () {}),
+            _buildOptionTile(context, Icons.question_answer_outlined, isArabic ? 'الأسئلة الشائعة' : 'FAQ', textColor, () {}),
+            
+            // App version read-only tile
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: Icon(Icons.system_update, color: textColor.withOpacity(0.7)),
+                title: Text(isArabic ? 'إصدار التطبيق' : 'App Version', style: TextStyle(color: textColor)),
+                trailing: Text('1.0.0', style: TextStyle(color: textColor.withOpacity(0.5))),
+              ),
+            ),
+            
+            const SizedBox(height: 30),
+            // Optional Footer
+            Center(
+              child: Text(
+                '© 2026 Jemypedia',
+                style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 12),
+              ),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -148,7 +176,7 @@ class DashboardScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.white38)),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textColor)),
       ],

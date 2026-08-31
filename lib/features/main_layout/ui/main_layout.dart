@@ -5,19 +5,7 @@ import 'package:jemypedia_app/core/providers/locale_provider.dart';
 import 'package:jemypedia_app/features/home/ui/home_screen.dart';
 import 'package:jemypedia_app/features/flash/ui/flash_screen.dart';
 import 'package:jemypedia_app/features/blog/ui/blog_screen.dart';
-
-// Placeholder screens for new tabs
-class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Search Screen')));
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Profile Screen')));
-}
+import 'package:jemypedia_app/features/dashboard/ui/dashboard_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -32,14 +20,14 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const FlashScreen(),
-    const SearchScreen(),
     const BlogScreen(),
-    const ProfileScreen(),
+    const DashboardScreen(), // This acts as the Profile tab now
   ];
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabic = context.watch<LocaleProvider>().isArabic;
     
     return Scaffold(
       body: IndexedStack(
@@ -57,31 +45,26 @@ class _MainLayoutState extends State<MainLayout> {
         backgroundColor: isDark ? Colors.black : Colors.white,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'الرئيسية',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: isArabic ? 'الرئيسية' : 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.flash_on_outlined),
-            activeIcon: Icon(Icons.flash_on),
-            label: 'فلاش',
+            icon: const Icon(Icons.flash_on_outlined),
+            activeIcon: const Icon(Icons.flash_on),
+            label: 'Flash',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search),
-            label: 'بحث',
+            icon: const Icon(Icons.article_outlined),
+            activeIcon: const Icon(Icons.article),
+            label: isArabic ? 'المدونة' : 'Blog',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.article_outlined),
-            activeIcon: Icon(Icons.article),
-            label: 'المدونة',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'حسابي',
+            icon: const Icon(Icons.person_outline),
+            activeIcon: const Icon(Icons.person),
+            label: isArabic ? 'حسابي' : 'Account',
           ),
         ],
       ),
