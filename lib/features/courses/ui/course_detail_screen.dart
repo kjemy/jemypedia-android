@@ -395,7 +395,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(plan['title']?[locale] ?? plan['title']?['en'] ?? 'باقة', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                                          Text(plan['title'] is Map ? (plan['title'][locale] ?? plan['title']['en'] ?? 'باقة') : (plan['title']?.toString() ?? 'باقة'), style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
                                           Text('${plan['access_period']?[locale] ?? ''} - ${plan['sale_price'] ?? plan['regular_price']} \$', style: const TextStyle(color: AppColors.accentNeon)),
                                         ],
                                       ),
