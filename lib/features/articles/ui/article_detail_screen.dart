@@ -86,7 +86,7 @@ class ArticleDetailScreen extends StatelessWidget {
                         "h1": Style(color: AppColors.primary),
                         "h2": Style(color: AppColors.primary),
                         "h3": Style(color: AppColors.primary),
-                        "a": Style(color: AppColors.accentBlue, textDecoration: TextDecoration.none),
+                        "a": Style(color: AppColors.primary, textDecoration: TextDecoration.none),
                       },
                     ),
                   ],
