@@ -202,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMainContent(BuildContext context, CoursesProvider provider, AuthProvider auth, bool isDark, Color textColor) {
     return CustomScrollView(
       slivers: [
-        _buildAppBar(context, isDark),
+        _buildAppBar(context, isDark, provider.courses, textColor),
         SliverToBoxAdapter(child: _buildTicker(context)),
         SliverToBoxAdapter(
           child: Padding(
@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 if (auth.isLoggedIn) _buildSubscriptionAlert(context),
                 const SizedBox(height: 15),
-                _buildHeroCarousel(context, provider.courses, textColor),
+                
                 const SizedBox(height: 25),
                 _buildSectionTitle(AppLocalizations.tr(context, 'popular_categories'), Icons.grid_view, textColor),
                 const SizedBox(height: 15),
@@ -264,108 +264,105 @@ class _HomeScreenState extends State<HomeScreen> {
     return StatefulBuilder(
       builder: (context, setState) {
         int currentPage = 0;
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.60,
-          child: Stack(
-            children: [
-              PageView.builder(
-                itemCount: heroCourses.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    currentPage = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final course = heroCourses[index];
-                  final categoryName = course.category.isNotEmpty ? course.category : (isArabic ? 'دورة تدريبية' : 'Course');
-                  final instructorName = course.getLocalizedInstructor(locale);
+        return Stack(
+          children: [
+            PageView.builder(
+              itemCount: heroCourses.length,
+              onPageChanged: (index) {
+                setState(() {
+                  currentPage = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final course = heroCourses[index];
+                final categoryName = course.category.isNotEmpty ? course.category : (isArabic ? 'دورة تدريبية' : 'Course');
+                final instructorName = course.getLocalizedInstructor(locale);
 
-                  return GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: CachedNetworkImageProvider(course.coverImageUrl),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                      ),
+                    ),
                     child: Container(
                       decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(course.coverImageUrl),
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                        ),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.9),
-                              Colors.black.withOpacity(0.5),
-                              Colors.transparent,
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                        padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 40.0, top: 40.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              course.getLocalizedTitle(locale),
-                              style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              categoryName,
-                              style: const TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: Text(course.progress > 0 ? (isArabic ? "متابعة التعلم" : "Continue Learning") : (isArabic ? "اشترك الآن" : "Subscribe Now"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            ),
-                            if (instructorName.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                instructorName,
-                                style: const TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ]
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.95),
+                            Colors.black.withOpacity(0.6),
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.4), // slight fade at top for AppBar icons
                           ],
                         ),
                       ),
+                      padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 40.0, top: 40.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            course.getLocalizedTitle(locale),
+                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            categoryName,
+                            style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text(course.progress > 0 ? (isArabic ? "متابعة التعلم" : "Continue Learning") : (isArabic ? "اشترك الآن" : "Subscribe Now"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ),
+                          if (instructorName.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              instructorName,
+                              style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                          ]
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              bottom: 15,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(heroCourses.length, (index) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: currentPage == index ? 8 : 6,
+                    height: currentPage == index ? 8 : 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: currentPage == index ? Colors.white : Colors.white38,
                     ),
                   );
-                },
+                }),
               ),
-              Positioned(
-                bottom: 15,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(heroCourses.length, (index) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: currentPage == index ? 10 : 8,
-                      height: currentPage == index ? 10 : 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: currentPage == index ? Colors.white : Colors.white38,
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -466,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTicker(BuildContext context) {
     final coursesProvider = Provider.of<CoursesProvider>(context);
     return Container(
-      height: 40,
+      height: 30,
       width: double.infinity,
       color: AppColors.primary.withOpacity(0.9),
       child: Center(
@@ -1261,7 +1258,7 @@ class CategoryExplorerScreen extends StatelessWidget {
                               if (sub['icon_image'] != null && sub['icon_image'].toString().isNotEmpty)
                                 CachedNetworkImage(
                                   imageUrl: sub['icon_image'],
-                                  width: 40, height: 40, fit: BoxFit.contain,
+                                  width: 40, height: 30, fit: BoxFit.contain,
                                   placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 1, color: AppColors.accentNeon)),
                                   errorWidget: (_, __, ___) => Icon(getCategoryIcon(sub['icon'] ?? sub['slug']), color: AppColors.accentNeon, size: 30),
                                 )
@@ -1456,7 +1453,7 @@ class CourseSearchDelegate extends SearchDelegate {
             borderRadius: BorderRadius.circular(8),
             child: CachedNetworkImage(
               imageUrl: c.coverImageUrl, 
-              width: 60, height: 40, fit: BoxFit.cover, 
+              width: 60, height: 30, fit: BoxFit.cover, 
               placeholder: (context, url) => Container(color: Colors.white10),
               errorWidget: (_,__,___) => const Icon(Icons.video_library),
             ),

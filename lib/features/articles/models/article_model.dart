@@ -28,7 +28,7 @@ class ArticleModel {
       return field.toString();
     }
 
-    String img = 'https://via.placeholder.com/600x400';
+    String img = 'https://jemypedia.com/wp-content/uploads/2026/08/jemypedia_logo.png'; // Better default image
     if (json['_embedded'] != null && json['_embedded']['wp:featuredmedia'] != null) {
       var media = json['_embedded']['wp:featuredmedia'];
       if (media is List && media.isNotEmpty && media[0]['source_url'] != null) {
@@ -41,14 +41,6 @@ class ArticleModel {
       cats = List<int>.from(json['categories']);
     }
 
-    String authorName = 'Admin';
-    if (json['_embedded'] != null && json['_embedded']['author'] != null) {
-      var auth = json['_embedded']['author'];
-      if (auth is List && auth.isNotEmpty && auth[0]['name'] != null) {
-        authorName = auth[0]['name'].toString();
-      }
-    }
-
     return ArticleModel(
       id: json['id'] ?? 0,
       title: extractText(json['title']),
@@ -56,16 +48,15 @@ class ArticleModel {
       excerpt: extractText(json['excerpt']),
       date: json['date'] ?? '',
       imageUrl: img,
-      author: authorName,
+      author: 'Jemypedia Team', // Hardcoded as requested
       categories: cats,
     );
   }
 
-  // The website is primarily Arabic, so we can just return the text directly since WP usually handles one language or WPML structure.
-  // If it's WPML, the API handles the language per endpoint, but we'll just return the title.
   String getLocalizedTitle(String languageCode) => title;
-  String getLocalizedContent(String languageCode) => excerpt; // returning excerpt for list view
+  String getLocalizedContent(String languageCode) => excerpt; 
   String getLocalizedFullContent(String languageCode) => content;
+  String getLocalizedAuthor(String languageCode) => languageCode == 'ar' ? 'فريق عمل جيمي بيديا' : 'Jemypedia Team';
 }
 
 class PostCategoryModel {

@@ -5,6 +5,7 @@ import 'package:jemypedia_app/core/providers/locale_provider.dart';
 import 'package:jemypedia_app/features/articles/ui/article_detail_screen.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 class BlogScreen extends StatefulWidget {
   const BlogScreen({super.key});
@@ -22,6 +23,18 @@ class _BlogScreenState extends State<BlogScreen> {
     });
   }
 
+  String cleanHtmlText(String text) {
+    return text
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll(RegExp(r'\[.*?\]'), '') // Remove shortcodes
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&#8211;', '-')
+        .replaceAll('&#8217;', "'")
+        .replaceAll('&amp;', '&')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = context.watch<LocaleProvider>().isArabic;
@@ -31,7 +44,7 @@ class _BlogScreenState extends State<BlogScreen> {
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isArabic ? 'المدونة' : 'Blog'),
+          title: Text(isArabic ? 'المدونة (Blog)' : 'Blog'),
           centerTitle: true,
           elevation: 0,
           backgroundColor: Colors.transparent,
@@ -124,14 +137,14 @@ class _BlogScreenState extends State<BlogScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            article.getLocalizedTitle(isArabic ? 'ar' : 'en').replaceAll(RegExp(r'<[^>]*>'), ''),
+                                            cleanHtmlText(article.getLocalizedTitle(isArabic ? 'ar' : 'en')),
                                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, height: 1.4),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           const SizedBox(height: 10),
                                           Text(
-                                            article.getLocalizedContent(isArabic ? 'ar' : 'en').replaceAll(RegExp(r'<[^>]*>'), ''),
+                                            cleanHtmlText(article.getLocalizedContent(isArabic ? 'ar' : 'en')),
                                             style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade700, fontSize: 14, height: 1.5),
                                             maxLines: 3,
                                             overflow: TextOverflow.ellipsis,
