@@ -567,13 +567,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 
-  Widget _buildAppBar(BuildContext context, bool isDark) {
+  Widget _buildAppBar(BuildContext context, bool isDark, List<CourseModel> courses, Color textColor) {
     return SliverAppBar(
-      expandedHeight: 120.0,
-      floating: false,
-      pinned: true,
+      floating: true,
+      pinned: false, // Disappears on scroll, transparent over the hero
+      snap: true,
       elevation: 0,
-      backgroundColor: isDark ? Colors.black : Colors.white,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      expandedHeight: MediaQuery.of(context).size.height * 0.50, // Hero height
+      flexibleSpace: FlexibleSpaceBar(
+        background: _buildHeroCarousel(context, courses, textColor),
+      ),
+      centerTitle: true,
+      title: Image.asset(
+        'assets/images/jemypedia_logo.png', // The new specific logo
+        height: 25, // Small size
+        fit: BoxFit.contain,
+        // color: Colors.white, // In case it's a white logo
+      ),
+      iconTheme: const IconThemeData(color: Colors.white, size: 28), // White icons over the image
       leading: Builder(
         builder: (context) => IconButton(
           icon: const Icon(Icons.menu_rounded),
@@ -582,50 +595,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         IconButton(
-          icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
-          onPressed: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
-        ),
-        IconButton(
           icon: const Icon(Icons.search_rounded),
           onPressed: () {
             showSearch(context: context, delegate: CourseSearchDelegate());
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.language_rounded),
-          onPressed: () => Provider.of<LocaleProvider>(context, listen: false).toggleLocale(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.notifications_none_rounded),
-          onPressed: () {},
-        ),
-        const SizedBox(width: 15),
+        const SizedBox(width: 10),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/app_icon.png',
-              height: 28,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Jemypedia',
-              style: TextStyle(
-                color: isDark ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                fontFamily: 'Cairo', // Or English font if preferred
-              ),
-            ),
-
-
-          ],
-        ),
-        centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 55, bottom: 16, right: 55),
-      ),
     );
   }
 
