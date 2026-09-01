@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SliverToBoxAdapter(child: _buildTicker(context)),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -473,10 +473,10 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const NeverScrollableScrollPhysics(),
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               child: Text(
                 "${coursesProvider.tickerText}  •  باستخدامك للتطبيق فأنت توافق على الشروط والأحكام الموضحة على موقعنا www.jemypedia.com  •  ${coursesProvider.tickerText}",
-                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
               ),
             ),
           ],
@@ -581,10 +581,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       centerTitle: true,
       title: Image.asset(
-        'assets/images/jemypedia_logo.png', // The new specific logo
-        height: 25, // Small size
+        'assets/images/jemypedia_logo.png',
+        width: MediaQuery.of(context).size.width * 0.30,
         fit: BoxFit.contain,
-        // color: Colors.white, // In case it's a white logo
+        
       ),
       iconTheme: const IconThemeData(color: Colors.white, size: 28), // White icons over the image
       leading: Builder(

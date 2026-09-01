@@ -48,7 +48,7 @@ class ArticleModel {
       excerpt: extractText(json['excerpt']),
       date: json['date'] ?? '',
       imageUrl: img,
-      author: 'Jemypedia Team', // Hardcoded as requested
+      author: 'فريق عمل Jemypedia', // Hardcoded as requested
       categories: cats,
     );
   }
@@ -56,7 +56,7 @@ class ArticleModel {
   String getLocalizedTitle(String languageCode) => title;
   String getLocalizedContent(String languageCode) => excerpt; 
   String getLocalizedFullContent(String languageCode) => content;
-  String getLocalizedAuthor(String languageCode) => languageCode == 'ar' ? 'فريق عمل جيمي بيديا' : 'Jemypedia Team';
+  String getLocalizedAuthor(String languageCode) => 'فريق عمل Jemypedia';
 }
 
 class PostCategoryModel {
