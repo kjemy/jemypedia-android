@@ -5,6 +5,7 @@ class ArticleModel {
   final String excerpt;
   final String date;
   final String imageUrl;
+  final String author;
   final List<int> categories;
 
   ArticleModel({
@@ -14,6 +15,7 @@ class ArticleModel {
     required this.excerpt,
     required this.date,
     required this.imageUrl,
+    this.author = 'Admin',
     this.categories = const [],
   });
 
@@ -39,6 +41,14 @@ class ArticleModel {
       cats = List<int>.from(json['categories']);
     }
 
+    String authorName = 'Admin';
+    if (json['_embedded'] != null && json['_embedded']['author'] != null) {
+      var auth = json['_embedded']['author'];
+      if (auth is List && auth.isNotEmpty && auth[0]['name'] != null) {
+        authorName = auth[0]['name'].toString();
+      }
+    }
+
     return ArticleModel(
       id: json['id'] ?? 0,
       title: extractText(json['title']),
@@ -46,6 +56,7 @@ class ArticleModel {
       excerpt: extractText(json['excerpt']),
       date: json['date'] ?? '',
       imageUrl: img,
+      author: authorName,
       categories: cats,
     );
   }
@@ -54,6 +65,7 @@ class ArticleModel {
   // If it's WPML, the API handles the language per endpoint, but we'll just return the title.
   String getLocalizedTitle(String languageCode) => title;
   String getLocalizedContent(String languageCode) => excerpt; // returning excerpt for list view
+  String getLocalizedFullContent(String languageCode) => content;
 }
 
 class PostCategoryModel {

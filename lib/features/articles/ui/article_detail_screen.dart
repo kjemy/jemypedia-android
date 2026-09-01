@@ -68,7 +68,7 @@ class ArticleDetailScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        article.getLocalizedContent(locale),
+                        article.getLocalizedFullContent(locale),
                         style: TextStyle(
                           fontSize: 18,
                           height: 1.6,
