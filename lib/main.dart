@@ -15,6 +15,7 @@ import 'package:jemypedia_app/core/providers/courses_provider.dart';
 import 'package:jemypedia_app/core/providers/auth_provider.dart';
 import 'package:jemypedia_app/core/providers/favorites_provider.dart';
 import 'package:jemypedia_app/core/providers/chat_provider.dart';
+import 'package:jemypedia_app/features/flash/providers/flash_provider.dart';
 import 'package:jemypedia_app/core/services/wordpress_service.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:jemypedia_app/features/splash/splash_screen.dart';
@@ -110,6 +111,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => FlashProvider()),
         ChangeNotifierProvider(create: (_) => SecurityService()),
       ],
       child: const JemyAcademyApp(),

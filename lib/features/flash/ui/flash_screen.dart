@@ -1,75 +1,483 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:jemypedia_app/core/providers/locale_provider.dart';
+import 'package:jemypedia_app/core/theme/app_colors.dart';
+import '../models/flash_model.dart';
+import '../providers/flash_provider.dart';
 
-class FlashScreen extends StatelessWidget {
+class FlashScreen extends StatefulWidget {
   const FlashScreen({super.key});
+
+  @override
+  State<FlashScreen> createState() => _FlashScreenState();
+}
+
+class _FlashScreenState extends State<FlashScreen> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<FlashProvider>(context, listen: false);
+      if (provider.items.isEmpty) {
+        provider.fetchFlashItems(refresh: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              // Mock Video Placeholder
-              Container(
-                color: Colors.primaries[index % Colors.primaries.length].shade900,
-                child: Center(
-                  child: Icon(Icons.play_circle_outline, size: 80, color: Colors.white54),
-                ),
+      body: Consumer<FlashProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading && provider.items.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          if (provider.error != null && provider.items.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.flash_off, color: Colors.white54, size: 64),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Flash videos available',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => provider.fetchFlashItems(refresh: true),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                    child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
               ),
-              // Overlay UI
-              Positioned(
-                bottom: 20,
-                left: 16,
-                right: 80,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Microlearning Video ${index + 1}',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Learn something new in 60 seconds! Swipe up for more.',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
-                ),
+            );
+          }
+
+          if (provider.items.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.flash_on, color: Colors.white38, size: 80),
+                  SizedBox(height: 16),
+                  Text('Coming Soon...', style: TextStyle(color: Colors.white54, fontSize: 18)),
+                ],
               ),
-              // Right Action Buttons
-              Positioned(
-                bottom: 20,
-                right: 16,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _buildActionItem(Icons.favorite_border, '1.2k'),
-                    const SizedBox(height: 20),
-                    _buildActionItem(Icons.comment_outlined, '45'),
-                    const SizedBox(height: 20),
-                    _buildActionItem(Icons.share_outlined, 'Share'),
-                  ],
-                ),
-              )
-            ],
+            );
+          }
+
+          return PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.vertical,
+            itemCount: provider.items.length,
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+              // Load more when near end
+              if (index >= provider.items.length - 3 && provider.hasMore) {
+                provider.fetchFlashItems();
+              }
+            },
+            itemBuilder: (context, index) {
+              return _FlashVideoCard(
+                item: provider.items[index],
+                isActive: index == _currentIndex,
+              );
+            },
           );
         },
       ),
     );
   }
+}
 
-  Widget _buildActionItem(IconData icon, String label) {
+// ═══════════════════════════════════════════════════════════
+// ─── Single Flash Video Card ─────────────────────────────
+// ═══════════════════════════════════════════════════════════
+
+class _FlashVideoCard extends StatefulWidget {
+  final FlashItem item;
+  final bool isActive;
+
+  const _FlashVideoCard({required this.item, required this.isActive});
+
+  @override
+  State<_FlashVideoCard> createState() => _FlashVideoCardState();
+}
+
+class _FlashVideoCardState extends State<_FlashVideoCard> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _showPlayButton = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVideo();
+  }
+
+  void _initVideo() {
+    final url = widget.item.flashVideoUrl;
+    if (url.isEmpty) return;
+
+    try {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(url))
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => _isInitialized = true);
+            _controller!.setLooping(true);
+            if (widget.isActive) {
+              _controller!.play();
+            }
+          }
+        }).catchError((e) {
+          debugPrint('Flash video init error: $e');
+        });
+    } catch (e) {
+      debugPrint('Flash video error: $e');
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _FlashVideoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _controller?.play();
+    } else if (!widget.isActive && oldWidget.isActive) {
+      _controller?.pause();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null || !_isInitialized) return;
+    setState(() {
+      if (_controller!.value.isPlaying) {
+        _controller!.pause();
+        _showPlayButton = true;
+      } else {
+        _controller!.play();
+        _showPlayButton = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final langCode = context.read<LocaleProvider>().isArabic ? 'ar' : 'en';
+
+    return GestureDetector(
+      onTap: _togglePlayPause,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Video / Thumbnail Background ──
+          _buildVideoLayer(),
+
+          // ── Dark gradient at bottom ──
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.4,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.8),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Play/Pause indicator ──
+          if (_showPlayButton)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 50),
+              ),
+            ),
+
+          // ── Right side action buttons ──
+          Positioned(
+            right: 12,
+            bottom: 120,
+            child: _buildActionButtons(context),
+          ),
+
+          // ── Bottom info overlay ──
+          Positioned(
+            bottom: 20,
+            left: 16,
+            right: 80,
+            child: _buildInfoOverlay(langCode),
+          ),
+
+          // ── Progress bar ──
+          if (_isInitialized && _controller != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: VideoProgressIndicator(
+                _controller!,
+                allowScrubbing: true,
+                colors: const VideoProgressColors(
+                  playedColor: AppColors.primary,
+                  bufferedColor: Colors.white24,
+                  backgroundColor: Colors.white10,
+                ),
+                padding: EdgeInsets.zero,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoLayer() {
+    if (_isInitialized && _controller != null) {
+      return SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: _controller!.value.size.width,
+            height: _controller!.value.size.height,
+            child: VideoPlayer(_controller!),
+          ),
+        ),
+      );
+    }
+
+    // Thumbnail fallback
+    final thumb = widget.item.flashThumbnail.isNotEmpty
+        ? widget.item.flashThumbnail
+        : widget.item.coverImageUrl;
+
+    if (thumb.isNotEmpty) {
+      return Image.network(
+        thumb,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]),
+      );
+    }
+
+    return Container(
+      color: Colors.grey[900],
+      child: const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    final provider = Provider.of<FlashProvider>(context);
+    final item = widget.item;
+
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white, size: 32),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        // ❤️ Like
+        _ActionButton(
+          icon: item.isLiked ? Icons.favorite : Icons.favorite_border,
+          color: item.isLiked ? AppColors.primary : Colors.white,
+          label: _formatCount(item.likesCount),
+          onTap: () => provider.toggleLike(item),
+        ),
+        const SizedBox(height: 20),
+
+        // 🔖 Save for Later (course)
+        _ActionButton(
+          icon: item.isSavedForLater ? Icons.bookmark : Icons.bookmark_border,
+          color: item.isSavedForLater ? Colors.amber : Colors.white,
+          label: item.isSavedForLater ? 'Saved' : 'Save',
+          onTap: () => provider.toggleSaveForLater(item),
+        ),
+        const SizedBox(height: 20),
+
+        // ♡ Favorite (course)
+        _ActionButton(
+          icon: item.isFavorited ? Icons.star : Icons.star_border,
+          color: item.isFavorited ? Colors.amber : Colors.white,
+          label: item.isFavorited ? 'Favorited' : 'Favorite',
+          onTap: () => provider.toggleFavorite(item),
+        ),
       ],
+    );
+  }
+
+  Widget _buildInfoOverlay(String langCode) {
+    final item = widget.item;
+    final isArabic = langCode == 'ar';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // "Learn More" button
+        GestureDetector(
+          onTap: () => _navigateToCourse(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isArabic ? Icons.arrow_back_ios : Icons.arrow_forward_ios,
+                  color: Colors.white,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isArabic ? 'اعرف المزيد' : 'Learn More',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Course Title
+        Text(
+          item.getLocalizedTitle(langCode),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 6),
+
+        // Category
+        if (item.category.isNotEmpty)
+          Row(
+            children: [
+              const Icon(Icons.folder_outlined, color: Colors.white70, size: 14),
+              const SizedBox(width: 4),
+              Text(
+                item.category,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+        const SizedBox(height: 4),
+
+        // Instructor
+        Row(
+          children: [
+            const Icon(Icons.person_outline, color: Colors.white70, size: 14),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                item.getLocalizedInstructor(langCode),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+
+        // Description
+        if (item.getLocalizedDescription(langCode).isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            item.getLocalizedDescription(langCode),
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _navigateToCourse(BuildContext context) {
+    // Navigate to course detail screen
+    Navigator.pushNamed(
+      context,
+      '/course-detail',
+      arguments: widget.item.courseId,
+    );
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
+    return count.toString();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ─── Reusable Action Button Widget ───────────────────────
+// ═══════════════════════════════════════════════════════════
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 30),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 11),
+          ),
+        ],
+      ),
     );
   }
 }
