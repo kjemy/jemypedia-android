@@ -277,8 +277,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
               ),
             ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildVideoLayer() {
