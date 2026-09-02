@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:jemypedia_app/core/providers/locale_provider.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
 import '../models/flash_model.dart';
@@ -130,11 +131,24 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
     _initVideo();
   }
 
-  void _initVideo() {
-    final url = widget.item.flashVideoUrl;
+  Future<void> _initVideo() async {
+    String url = widget.item.flashVideoUrl;
     if (url.isEmpty) return;
 
     try {
+      if (url.contains('youtube.com') || url.contains('youtu.be')) {
+        try {
+          final yt = YoutubeExplode();
+          final video = await yt.videos.get(url);
+          final manifest = await yt.videos.streamsClient.getManifest(video.id);
+          final streamInfo = manifest.muxed.withHighestBitrate();
+          url = streamInfo.url.toString();
+          yt.close();
+        } catch (e) {
+          debugPrint('YouTube Extract Error: $e');
+        }
+      }
+
       _controller = VideoPlayerController.networkUrl(Uri.parse(url))
         ..initialize().then((_) {
           if (mounted) {
