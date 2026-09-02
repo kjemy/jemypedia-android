@@ -6,6 +6,8 @@ import 'package:jemypedia_app/core/providers/locale_provider.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
 import '../models/flash_model.dart';
 import '../providers/flash_provider.dart';
+import 'package:jemypedia_app/features/courses/ui/course_detail_screen.dart';
+import 'package:jemypedia_app/core/providers/courses_provider.dart';
 
 class FlashScreen extends StatefulWidget {
   const FlashScreen({super.key});
@@ -199,15 +201,17 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
   Widget build(BuildContext context) {
     final langCode = context.read<LocaleProvider>().isArabic ? 'ar' : 'en';
 
-    return GestureDetector(
-      onTap: _togglePlayPause,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // ── Video / Thumbnail Background ──
-          _buildVideoLayer(),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // ── Video / Thumbnail Background ──
+        GestureDetector(
+          onTap: _togglePlayPause,
+          behavior: HitTestBehavior.opaque,
+          child: _buildVideoLayer(),
+        ),
 
-          // ── Dark gradient at bottom ──
+        // ── Dark gradient at bottom ──
           Positioned(
             bottom: 0,
             left: 0,
@@ -445,12 +449,24 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
   }
 
   void _navigateToCourse(BuildContext context) {
-    // Navigate to course detail screen
-    Navigator.pushNamed(
-      context,
-      '/course-detail',
-      arguments: widget.item.courseId,
-    );
+    final coursesProvider = Provider.of<CoursesProvider>(context, listen: false);
+    
+    final courses = coursesProvider.courses;
+    final courseId = widget.item.courseId;
+    final index = courses.indexWhere((c) => c.id == courseId);
+    
+    if (index != -1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => CourseDetailScreen(course: courses[index])),
+      );
+    } else {
+      // Fallback if course not found in memory (could show a toast or fetch it)
+      debugPrint('Course not found locally');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.read<LocaleProvider>().isArabic ? 'جاري تحميل الكورس...' : 'Loading course...')),
+      );
+    }
   }
 
   String _formatCount(int count) {
