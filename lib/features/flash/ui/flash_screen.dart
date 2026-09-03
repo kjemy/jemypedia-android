@@ -8,6 +8,7 @@ import '../models/flash_model.dart';
 import '../providers/flash_provider.dart';
 import 'package:jemypedia_app/features/courses/ui/course_detail_screen.dart';
 import 'package:jemypedia_app/core/providers/courses_provider.dart';
+import 'package:jemypedia_app/core/providers/favorites_provider.dart';
 
 class FlashScreen extends StatefulWidget {
   final bool isTabActive;
@@ -325,12 +326,17 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
 
   Widget _buildActionButtons(BuildContext context) {
     final provider = Provider.of<FlashProvider>(context);
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final coursesProvider = Provider.of<CoursesProvider>(context);
     final item = widget.item;
+
+    final bool isFavorited = favoritesProvider.isCourseFavorite(item.courseId);
+    final bool isSaved = coursesProvider.watchLaterCourseIds.contains(item.courseId);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // â¤ï¸ Like
+        // ❤️ Like (Flash specific)
         _ActionButton(
           icon: item.isLiked ? Icons.favorite : Icons.favorite_border,
           color: item.isLiked ? AppColors.primary : Colors.white,
@@ -339,21 +345,21 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
         ),
         const SizedBox(height: 20),
 
-        // ðŸ”– Save for Later (course)
+        // 🔖 Save for Later (App Global)
         _ActionButton(
-          icon: item.isSavedForLater ? Icons.bookmark : Icons.bookmark_border,
-          color: item.isSavedForLater ? Colors.amber : Colors.white,
-          label: item.isSavedForLater ? 'Saved' : 'Save',
-          onTap: () => provider.toggleSaveForLater(item),
+          icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+          color: isSaved ? Colors.amber : Colors.white,
+          label: isSaved ? (context.read<LocaleProvider>().isArabic ? 'محفوظ' : 'Saved') : (context.read<LocaleProvider>().isArabic ? 'حفظ' : 'Save'),
+          onTap: () => coursesProvider.toggleWatchLater(item.courseId),
         ),
         const SizedBox(height: 20),
 
-        // â™¡ Favorite (course)
+        // ♡ Favorite (App Global)
         _ActionButton(
-          icon: item.isFavorited ? Icons.star : Icons.star_border,
-          color: item.isFavorited ? Colors.amber : Colors.white,
-          label: item.isFavorited ? 'Favorited' : 'Favorite',
-          onTap: () => provider.toggleFavorite(item),
+          icon: isFavorited ? Icons.star : Icons.star_border,
+          color: isFavorited ? Colors.amber : Colors.white,
+          label: isFavorited ? (context.read<LocaleProvider>().isArabic ? 'مفضلة' : 'Favorited') : (context.read<LocaleProvider>().isArabic ? 'تفضيل' : 'Favorite'),
+          onTap: () => favoritesProvider.toggleCourseFavorite(item.courseId),
         ),
       ],
     );
@@ -463,10 +469,15 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
     final index = courses.indexWhere((c) => c.id == courseId);
     
     if (index != -1) {
+      _controller?.pause();
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => CourseDetailScreen(course: courses[index])),
-      );
+      ).then((_) {
+        if (mounted && widget.isActive && widget.isTabActive) {
+          _controller?.play();
+        }
+      });
     } else {
       // Fallback if course not found in memory (could show a toast or fetch it)
       debugPrint('Course not found locally');
