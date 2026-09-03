@@ -26,6 +26,14 @@ class _MainLayoutState extends State<MainLayout> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<FlashProvider>(context, listen: false).fetchFlashItems(refresh: true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = context.watch<LocaleProvider>().isArabic;
