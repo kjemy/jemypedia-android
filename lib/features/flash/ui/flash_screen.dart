@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -108,9 +108,9 @@ class _FlashScreenState extends State<FlashScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ─── Single Flash Video Card ─────────────────────────────
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â”€â”€â”€ Single Flash Video Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class _FlashVideoCard extends StatefulWidget {
   final FlashItem item;
@@ -143,7 +143,12 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
           final yt = YoutubeExplode();
           final video = await yt.videos.get(url);
           final manifest = await yt.videos.streamsClient.getManifest(video.id);
-          final streamInfo = manifest.muxed.withHighestBitrate();
+          // Get standard quality (360p or 480p) for faster loading on mobile
+          final muxedStreams = manifest.muxed.sortByVideoQuality().toList();
+          final streamInfo = muxedStreams.firstWhere(
+            (s) => s.videoQuality.name.contains('360') || s.videoQuality.name.contains('480'),
+            orElse: () => muxedStreams.last, // Fallback to lowest quality if not found
+          );
           url = streamInfo.url.toString();
           yt.close();
         } catch (e) {
@@ -204,14 +209,14 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ── Video / Thumbnail Background ──
+        // â”€â”€ Video / Thumbnail Background â”€â”€
         GestureDetector(
           onTap: _togglePlayPause,
           behavior: HitTestBehavior.opaque,
           child: _buildVideoLayer(),
         ),
 
-        // ── Dark gradient at bottom ──
+        // â”€â”€ Dark gradient at bottom â”€â”€
           Positioned(
             bottom: 0,
             left: 0,
@@ -231,7 +236,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
             ),
           ),
 
-          // ── Play/Pause indicator ──
+          // â”€â”€ Play/Pause indicator â”€â”€
           if (_showPlayButton)
             Center(
               child: Container(
@@ -244,14 +249,14 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
               ),
             ),
 
-          // ── Right side action buttons ──
+          // â”€â”€ Right side action buttons â”€â”€
           Positioned(
             right: 12,
             bottom: 120,
             child: _buildActionButtons(context),
           ),
 
-          // ── Bottom info overlay ──
+          // â”€â”€ Bottom info overlay â”€â”€
           Positioned(
             bottom: 20,
             left: 16,
@@ -259,7 +264,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
             child: _buildInfoOverlay(langCode),
           ),
 
-          // ── Progress bar ──
+          // â”€â”€ Progress bar â”€â”€
           if (_isInitialized && _controller != null)
             Positioned(
               bottom: 0,
@@ -322,7 +327,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ❤️ Like
+        // â¤ï¸ Like
         _ActionButton(
           icon: item.isLiked ? Icons.favorite : Icons.favorite_border,
           color: item.isLiked ? AppColors.primary : Colors.white,
@@ -331,7 +336,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
         ),
         const SizedBox(height: 20),
 
-        // 🔖 Save for Later (course)
+        // ðŸ”– Save for Later (course)
         _ActionButton(
           icon: item.isSavedForLater ? Icons.bookmark : Icons.bookmark_border,
           color: item.isSavedForLater ? Colors.amber : Colors.white,
@@ -340,7 +345,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
         ),
         const SizedBox(height: 20),
 
-        // ♡ Favorite (course)
+        // â™¡ Favorite (course)
         _ActionButton(
           icon: item.isFavorited ? Icons.star : Icons.star_border,
           color: item.isFavorited ? Colors.amber : Colors.white,
@@ -378,7 +383,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  isArabic ? 'اعرف المزيد' : 'Learn More',
+                  isArabic ? 'Ø§Ø¹Ø±Ù Ø§Ù„Ù…Ø²ÙŠØ¯' : 'Learn More',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -463,7 +468,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
       // Fallback if course not found in memory (could show a toast or fetch it)
       debugPrint('Course not found locally');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.read<LocaleProvider>().isArabic ? 'جاري تحميل الكورس...' : 'Loading course...')),
+        SnackBar(content: Text(context.read<LocaleProvider>().isArabic ? 'Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ÙƒÙˆØ±Ø³...' : 'Loading course...')),
       );
     }
   }
@@ -475,9 +480,9 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ─── Reusable Action Button Widget ───────────────────────
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â”€â”€â”€ Reusable Action Button Widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
