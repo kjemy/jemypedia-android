@@ -18,12 +18,7 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const FlashScreen(),
-    const BlogScreen(),
-    const DashboardScreen(), // This acts as the Profile tab now
-  ];
+
 
   @override
   void initState() {
@@ -38,10 +33,17 @@ class _MainLayoutState extends State<MainLayout> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = context.watch<LocaleProvider>().isArabic;
     
+    final List<Widget> screens = [
+      const HomeScreen(),
+      FlashScreen(isTabActive: _currentIndex == 1),
+      const BlogScreen(),
+      const DashboardScreen(),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

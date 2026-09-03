@@ -10,7 +10,8 @@ import 'package:jemypedia_app/features/courses/ui/course_detail_screen.dart';
 import 'package:jemypedia_app/core/providers/courses_provider.dart';
 
 class FlashScreen extends StatefulWidget {
-  const FlashScreen({super.key});
+  final bool isTabActive;
+  const FlashScreen({super.key, this.isTabActive = true});
 
   @override
   State<FlashScreen> createState() => _FlashScreenState();
@@ -94,6 +95,7 @@ class _FlashScreenState extends State<FlashScreen> {
               return _FlashVideoCard(
                 item: provider.items[index],
                 isActive: index == _currentIndex,
+                isTabActive: widget.isTabActive,
               );
             },
           );
@@ -110,8 +112,9 @@ class _FlashScreenState extends State<FlashScreen> {
 class _FlashVideoCard extends StatefulWidget {
   final FlashItem item;
   final bool isActive;
+  final bool isTabActive;
 
-  const _FlashVideoCard({required this.item, required this.isActive});
+  const _FlashVideoCard({required this.item, required this.isActive, this.isTabActive = true});
 
   @override
   State<_FlashVideoCard> createState() => _FlashVideoCardState();
@@ -157,7 +160,7 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
           if (mounted) {
             setState(() => _isInitialized = true);
             _controller!.setLooping(true);
-            if (widget.isActive) {
+            if (widget.isActive && widget.isTabActive) {
               _controller!.play();
             }
           }
@@ -172,9 +175,13 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
   @override
   void didUpdateWidget(covariant _FlashVideoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) {
+    
+    final shouldPlay = widget.isActive && widget.isTabActive;
+    final wasPlaying = oldWidget.isActive && oldWidget.isTabActive;
+
+    if (shouldPlay && !wasPlaying) {
       _controller?.play();
-    } else if (!widget.isActive && oldWidget.isActive) {
+    } else if (!shouldPlay && wasPlaying) {
       _controller?.pause();
     }
   }
