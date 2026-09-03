@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/flash_model.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 class FlashProvider extends ChangeNotifier {
   static const String _flashApiBase = 'https://www.jemypedia.com/wp-json/jemy-flash/v1';
@@ -82,8 +83,13 @@ class FlashProvider extends ChangeNotifier {
           item.isSavedForLater = _savedCourseIds.contains(item.courseId);
         }
 
+
         _items.addAll(newItems);
         _currentPage++;
+        
+        // Background pre-resolve YouTube URLs
+        _preResolveUrls(newItems);
+
       } else {
         _error = 'Failed to load Flash items (${response.statusCode})';
       }
@@ -130,6 +136,29 @@ class FlashProvider extends ChangeNotifier {
     }
     notifyListeners();
     _saveLocalState();
+  }
+
+  Future<void> _preResolveUrls(List<FlashItem> newItems) async {
+    final yt = YoutubeExplode();
+    for (var item in newItems) {
+      if (item.flashVideoUrl.contains('youtube.com') || item.flashVideoUrl.contains('youtu.be')) {
+        try {
+          final video = await yt.videos.get(item.flashVideoUrl);
+          final manifest = await yt.videos.streamsClient.getManifest(video.id);
+          final muxedStreams = manifest.muxed.sortByVideoQuality().toList();
+          final streamInfo = muxedStreams.firstWhere(
+            (s) => s.videoQuality.name.contains('360') || s.videoQuality.name.contains('480'),
+            orElse: () => muxedStreams.last,
+          );
+          item.resolvedUrl = streamInfo.url.toString();
+        } catch (e) {
+          debugPrint('Pre-resolve error: $e');
+        }
+      } else {
+        item.resolvedUrl = item.flashVideoUrl;
+      }
+    }
+    yt.close();
   }
 
   // ─── Save for Later (add course to watch later) ───────

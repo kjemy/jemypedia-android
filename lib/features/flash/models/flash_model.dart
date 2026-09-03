@@ -18,6 +18,7 @@ class FlashItem {
   bool isLiked;
   bool isFavorited;
   bool isSavedForLater;
+  String? resolvedUrl;
 
   FlashItem({
     required this.id,

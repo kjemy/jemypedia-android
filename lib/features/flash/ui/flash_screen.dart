@@ -23,12 +23,7 @@ class _FlashScreenState extends State<FlashScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<FlashProvider>(context, listen: false);
-      if (provider.items.isEmpty) {
-        provider.fetchFlashItems(refresh: true);
-      }
-    });
+    // fetch is now handled early in main_layout
   }
 
   @override
@@ -134,22 +129,23 @@ class _FlashVideoCardState extends State<_FlashVideoCard> {
   }
 
   Future<void> _initVideo() async {
-    String url = widget.item.flashVideoUrl;
+    // If not resolved yet, resolve on the fly, otherwise use the pre-resolved URL
+    String url = widget.item.resolvedUrl ?? widget.item.flashVideoUrl;
     if (url.isEmpty) return;
 
     try {
-      if (url.contains('youtube.com') || url.contains('youtu.be')) {
+      if (widget.item.resolvedUrl == null && (url.contains('youtube.com') || url.contains('youtu.be'))) {
         try {
           final yt = YoutubeExplode();
           final video = await yt.videos.get(url);
           final manifest = await yt.videos.streamsClient.getManifest(video.id);
-          // Get standard quality (360p or 480p) for faster loading on mobile
           final muxedStreams = manifest.muxed.sortByVideoQuality().toList();
           final streamInfo = muxedStreams.firstWhere(
             (s) => s.videoQuality.name.contains('360') || s.videoQuality.name.contains('480'),
-            orElse: () => muxedStreams.last, // Fallback to lowest quality if not found
+            orElse: () => muxedStreams.last,
           );
           url = streamInfo.url.toString();
+          widget.item.resolvedUrl = url;
           yt.close();
         } catch (e) {
           debugPrint('YouTube Extract Error: $e');

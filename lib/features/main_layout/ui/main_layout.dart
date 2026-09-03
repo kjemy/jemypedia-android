@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:jemypedia_app/core/theme/app_colors.dart';
 import 'package:jemypedia_app/core/providers/locale_provider.dart';
 import 'package:jemypedia_app/features/home/ui/home_screen.dart';
+import 'package:jemypedia_app/features/flash/providers/flash_provider.dart';
 import 'package:jemypedia_app/features/flash/ui/flash_screen.dart';
 import 'package:jemypedia_app/features/blog/ui/blog_screen.dart';
 import 'package:jemypedia_app/features/dashboard/ui/dashboard_screen.dart';
